@@ -134,17 +134,6 @@
       padding: 14px 16px;
     }
 
-    .hud-title {
-      font-size: 11px;
-      color: var(--text-soft);
-      margin-bottom: 6px;
-    }
-
-    .hud-value {
-      font-size: 18px;
-      line-height: 1.3;
-    }
-
     .hud-chip {
       display: inline-flex;
       align-items: center;
@@ -156,6 +145,17 @@
       background: rgba(66, 215, 125, 0.18);
       color: var(--green-deep);
       font-size: 14px;
+    }
+
+    .hud-title {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .hud-value {
+      font-size: 18px;
+      line-height: 1.3;
     }
 
     .sub-card {
@@ -185,20 +185,9 @@
       padding: 16px;
     }
 
-    .status-title {
-      font-size: 12px;
-      color: var(--text-soft);
-    }
-
     .status-main {
       font-size: 16px;
       line-height: 1.45;
-    }
-
-    .status-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
     }
 
     .pill {
@@ -235,48 +224,48 @@
       color: var(--green-deep);
     }
 
-    .action-button.warn {
-      background: rgba(255, 133, 125, 0.18);
-      color: #a74640;
-    }
-
     .avatar-marker {
       position: relative;
-      width: 68px;
-      height: 68px;
-      transform: translate(-50%, -62%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 48px;
+      height: 48px;
     }
 
     .avatar-shadow {
       position: absolute;
       left: 50%;
-      bottom: 6px;
-      width: 34px;
-      height: 12px;
-      transform: translateX(-50%);
-      border-radius: 999px;
-      background: rgba(23, 49, 38, 0.18);
-      filter: blur(6px);
-    }
-
-    .avatar-glow {
-      position: absolute;
-      inset: 14px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -50%);
       border-radius: 999px;
       background: rgba(66, 215, 125, 0.18);
-      filter: blur(10px);
+      box-shadow: 0 0 0 10px rgba(66, 215, 125, 0.12);
+    }
+
+    .avatar-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 3px solid rgba(255, 255, 255, 0.96);
+      background: var(--green);
+      box-shadow: 0 6px 16px rgba(24, 49, 39, 0.24);
     }
 
     .avatar-image {
-      position: relative;
-      width: 42px;
-      height: 42px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 28px;
+      height: 28px;
+      transform: translate(-50%, -90%);
       object-fit: contain;
       image-rendering: pixelated;
-      filter: drop-shadow(0 4px 10px rgba(23, 49, 38, 0.18));
+      filter: drop-shadow(0 6px 10px rgba(23, 49, 38, 0.18));
+      pointer-events: none;
     }
 
     .station-marker {
@@ -350,38 +339,35 @@
     <div class="map-overlay top-overlay">
       <section class="floating-card hud-card">
         <div>
-          <div class="hud-title">현재 에너지</div>
-          <div class="hud-value" id="energyValue">100⚡</div>
+          <div class="hud-title">내 GPS 위치</div>
+          <div class="hud-value" id="coordValue">위치 수신 전</div>
         </div>
         <div class="hud-chip" id="rideState">GPS 대기</div>
       </section>
 
       <section class="floating-card sub-card">
         <div class="sub-row">
-          <span>내 위치</span>
-          <strong id="coordValue">위치 수신 전</strong>
+          <span>GPS 정확도</span>
+          <strong id="gpsMeta">확인 전</strong>
         </div>
         <div class="sub-row">
           <span>가장 가까운 대여소</span>
           <strong id="stationValue">탐색 중...</strong>
+        </div>
+        <div class="sub-row">
+          <span>근처 대여소 수</span>
+          <strong id="nearbyCount">0개</strong>
         </div>
       </section>
     </div>
 
     <div class="map-overlay bottom-overlay">
       <section class="floating-card status-card">
-        <div class="status-title">탐색 메시지</div>
-        <div class="status-main" id="statusMessage">근처 토템 탐색 중...</div>
-        <div class="status-meta">
-          <span class="pill" id="gpsMeta">GPS 오프라인</span>
-          <span class="pill" id="totemMeta">토템 거리 계산 중</span>
-        </div>
+        <div class="status-main" id="statusMessage">따릉이 대여소 탐색 중...</div>
       </section>
 
       <div class="actions">
         <button class="action-button primary" id="locateButton" type="button">내 위치 다시 잡기</button>
-        <button class="action-button" id="themeButton" type="button">다크 맵 전환</button>
-        <button class="action-button warn" id="demoButton" type="button">샘플 위치로 보기</button>
       </div>
     </div>
   </div>
@@ -394,48 +380,9 @@
   <script>
     const SEOUL_CENTER = [37.5665, 126.9780];
     const DEFAULT_ZOOM = 16;
-
-    const STADIA_THEMES = {
-      light: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
-      dark: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
-    };
-
-    const STATION_DATA = [
-      {
-        id: '102',
-        name: '서울광장 대여소',
-        type: 'regular',
-        available: 9,
-        latlng: [37.5663, 126.9779],
-      },
-      {
-        id: '214',
-        name: '성수역 대여소',
-        type: 'sprout',
-        available: 4,
-        latlng: [37.5446, 127.0557],
-      },
-      {
-        id: '307',
-        name: '여의나루 대여소',
-        type: 'regular',
-        available: 13,
-        latlng: [37.5271, 126.9326],
-      },
-      {
-        id: '418',
-        name: '반포한강공원 대여소',
-        type: 'regular',
-        available: 11,
-        latlng: [37.5102, 126.9953],
-      },
-    ];
-
-    const TOTEMS = [
-      { id: 'totem-1', name: '황금 도토리', latlng: [37.5660, 126.9796] },
-      { id: 'totem-2', name: '네온 기어', latlng: [37.5442, 127.0547] },
-      { id: 'totem-3', name: '새싹 배터리', latlng: [37.5265, 126.9337] },
-    ];
+    const DISPLAY_RADIUS_METERS = 1800;
+    const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+    const OFFICIAL_STATION_API = 'https://www.bikeseoul.com/app/station/getStationRealtimeStatus.do';
 
     const AVATAR_IMAGE =
       "data:image/svg+xml;charset=UTF-8," +
@@ -460,52 +407,15 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    let currentTheme = 'light';
-    let tileLayer = createTileLayer(currentTheme).addTo(map);
-
-    function createTileLayer(theme) {
-      return L.tileLayer(STADIA_THEMES[theme], {
-        maxZoom: 20,
-        attribution:
-          '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noreferrer">Stadia Maps</a> ' +
-          '&copy; <a href="https://openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> ' +
-          '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
-      });
-    }
+    L.tileLayer(TILE_URL, {
+      maxZoom: 20,
+      attribution:
+        '&copy; <a href="https://carto.com/" target="_blank" rel="noreferrer">CARTO</a> ' +
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+      subdomains: 'abcd',
+    }).addTo(map);
 
     const stationLayer = L.layerGroup().addTo(map);
-    const totemLayer = L.layerGroup().addTo(map);
-
-    STATION_DATA.forEach((station) => {
-      const marker = L.marker(station.latlng, {
-        icon: L.divIcon({
-          className: '',
-          html: `
-            <div class="station-marker">
-              <div class="station-pin ${station.type}"></div>
-              <div class="station-label">${station.name}<br>${station.available}대</div>
-            </div>
-          `,
-          iconSize: [120, 56],
-          iconAnchor: [60, 46],
-        }),
-      });
-
-      marker.bindPopup(`${station.name}<br>대여 가능 ${station.available}대`);
-      marker.addTo(stationLayer);
-    });
-
-    TOTEMS.forEach((totem) => {
-      L.marker(totem.latlng, {
-        icon: L.divIcon({
-          className: '',
-          html: '<div class="totem-marker"></div>',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        }),
-        interactive: false,
-      }).addTo(totemLayer);
-    });
 
     const avatarMarker = L.marker(SEOUL_CENTER, {
       zIndexOffset: 1000,
@@ -514,12 +424,12 @@
         html: `
           <div class="avatar-marker">
             <div class="avatar-shadow"></div>
-            <div class="avatar-glow"></div>
+            <div class="avatar-center"></div>
             <img class="avatar-image" src="${AVATAR_IMAGE}" alt="내 아바타">
           </div>
         `,
-        iconSize: [68, 68],
-        iconAnchor: [34, 52],
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
       }),
     }).addTo(map);
 
@@ -532,27 +442,29 @@
       fillOpacity: 0.08,
     }).addTo(map);
 
-    const energyValue = document.getElementById('energyValue');
     const rideState = document.getElementById('rideState');
     const coordValue = document.getElementById('coordValue');
     const stationValue = document.getElementById('stationValue');
     const statusMessage = document.getElementById('statusMessage');
     const gpsMeta = document.getElementById('gpsMeta');
-    const totemMeta = document.getElementById('totemMeta');
+    const nearbyCount = document.getElementById('nearbyCount');
     const locateButton = document.getElementById('locateButton');
-    const themeButton = document.getElementById('themeButton');
-    const demoButton = document.getElementById('demoButton');
 
     let watchId = null;
     let hasFirstLock = false;
     let lastLatLng = null;
-    let energy = 100;
+    let stationData = [];
+    let stationLoadState = 'idle';
 
     function formatCoords(latlng) {
       return `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
     }
 
     function getNearestItem(items, latlng) {
+      if (!items.length) {
+        return null;
+      }
+
       return items
         .map((item) => ({
           ...item,
@@ -561,46 +473,150 @@
         .sort((a, b) => a.distance - b.distance)[0];
     }
 
-    function setStatusForPosition(latlng, accuracy) {
-      const nearestStation = getNearestItem(STATION_DATA, latlng);
-      const nearestTotem = getNearestItem(TOTEMS, latlng);
+    async function fetchOfficialStations() {
+      stationLoadState = 'loading';
+      stationValue.textContent = '공식 데이터 불러오는 중...';
+      nearbyCount.textContent = '-';
+      statusMessage.textContent = '따릉이 공식 대여소 데이터를 가져오는 중입니다.';
 
+      try {
+        const response = await fetch(OFFICIAL_STATION_API, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          },
+          body: new URLSearchParams({
+            stationGrpSeq: 'ALL',
+            tabId: '',
+          }).toString(),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const realtimeList = Array.isArray(data.realtimeList) ? data.realtimeList : [];
+
+        stationData = realtimeList
+          .map((station) => {
+            const lat = Number(station.stationLatitude);
+            const lng = Number(station.stationLongitude);
+            const available =
+              Number(station.parkingBikeTotCnt || 0) +
+              Number(station.parkingQRBikeCnt || 0) +
+              Number(station.parkingELECBikeCnt || 0);
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+              return null;
+            }
+
+            return {
+              id: station.stationId,
+              name: station.stationName,
+              type: station.stationSeCd === 'RAK_001' ? 'regular' : 'sprout',
+              available,
+              latlng: [lat, lng],
+            };
+          })
+          .filter(Boolean);
+
+        stationLoadState = 'ready';
+      } catch (error) {
+        stationLoadState = 'error';
+        stationData = [];
+        stationLayer.clearLayers();
+        stationValue.textContent = '공식 데이터 연결 실패';
+        nearbyCount.textContent = '0개';
+        statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 환경 또는 네트워크 정책 때문에 차단될 수 있어요.';
+        console.error(error);
+      }
+    }
+
+    function renderStationsAround(latlng) {
+      stationLayer.clearLayers();
+
+      if (!stationData.length) {
+        return;
+      }
+
+      const sortedStations = stationData
+        .map((station) => ({
+          ...station,
+          distance: map.distance(latlng, station.latlng),
+        }))
+        .sort((a, b) => a.distance - b.distance);
+
+      const visibleStations = sortedStations.filter((station) => station.distance <= DISPLAY_RADIUS_METERS);
+      const stationsToRender = (visibleStations.length > 0 ? visibleStations : sortedStations.slice(0, 10)).slice(0, 12);
+
+      stationsToRender.forEach((station, index) => {
+        const marker = L.marker(station.latlng, {
+          icon: L.divIcon({
+            className: '',
+            html: `
+              <div class="station-marker">
+                <div class="station-pin ${station.type}"></div>
+                <div class="station-label">${station.name}<br>${Math.round(station.distance)}m · ${station.available}대</div>
+              </div>
+            `,
+            iconSize: [126, 56],
+            iconAnchor: [63, 46],
+          }),
+          zIndexOffset: index === 0 ? 300 : 0,
+        });
+
+        marker.bindPopup(`${station.name}<br>내 위치에서 ${Math.round(station.distance)}m<br>대여 가능 ${station.available}대`);
+        marker.addTo(stationLayer);
+      });
+    }
+
+    function setStatusForPosition(latlng, accuracy) {
       coordValue.textContent = formatCoords(latlng);
+      gpsMeta.textContent = `±${Math.round(accuracy)}m`;
+
+      if (stationLoadState === 'loading') {
+        rideState.textContent = '대여소 동기화중';
+        stationValue.textContent = '공식 데이터 불러오는 중...';
+        nearbyCount.textContent = '-';
+        statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오는 중입니다.';
+        return;
+      }
+
+      if (stationLoadState === 'error' || !stationData.length) {
+        rideState.textContent = 'GPS 고정';
+        stationValue.textContent = '공식 데이터 없음';
+        nearbyCount.textContent = '0개';
+        statusMessage.textContent = 'GPS는 잡혔지만 공식 따릉이 대여소 데이터를 아직 연결하지 못했습니다.';
+        return;
+      }
+
+      const nearestStation = getNearestItem(stationData, latlng);
+      const stationsInRange = stationData.filter((station) => map.distance(latlng, station.latlng) <= DISPLAY_RADIUS_METERS);
+      renderStationsAround(latlng);
+
       stationValue.textContent = `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
-      gpsMeta.textContent = `GPS 정확도 ±${Math.round(accuracy)}m`;
-      totemMeta.textContent = `${nearestTotem.name} ${Math.round(nearestTotem.distance)}m`;
+      nearbyCount.textContent = `${stationsInRange.length}개`;
 
       if (nearestStation.distance <= 120) {
         statusMessage.textContent = `${nearestStation.name} 근처입니다. 따릉이 인증 가능 구간에 진입했어요.`;
         rideState.textContent = '인증 가능';
-      } else if (nearestTotem.distance <= 80) {
-        statusMessage.textContent = `${nearestTotem.name}가 가까워요. 조금만 더 이동하면 채집이 열립니다.`;
-        rideState.textContent = '토템 근접';
+      } else if (accuracy > 45) {
+        statusMessage.textContent = 'GPS 오차가 아직 커요. 잠시 서 있거나 다시 잡기를 눌러 위치를 보정해보세요.';
+        rideState.textContent = 'GPS 보정중';
       } else {
-        statusMessage.textContent = '근처 토템 탐색 중... 실제로 걸으면 지도와 아바타가 부드럽게 따라옵니다.';
-        rideState.textContent = '이동 중';
-      }
-    }
-
-    function updateEnergy(nextLatLng) {
-      if (!lastLatLng) {
-        lastLatLng = nextLatLng;
-        return;
-      }
-
-      const movedMeters = map.distance(lastLatLng, nextLatLng);
-      if (movedMeters >= 8) {
-        energy += Math.max(1, Math.round(movedMeters / 15));
-        energyValue.textContent = `${energy}⚡`;
-        lastLatLng = nextLatLng;
+        statusMessage.textContent = `${Math.round(nearestStation.distance)}m 앞에 ${nearestStation.name}가 있어요. 가까운 대여소만 지도에 표시 중입니다.`;
+        rideState.textContent = 'GPS 고정';
       }
     }
 
     function updatePlayer(lat, lng, accuracy) {
       const nextLatLng = L.latLng(lat, lng);
+      const movedDistance = lastLatLng ? map.distance(lastLatLng, nextLatLng) : Infinity;
+
       avatarMarker.setLatLng(nextLatLng);
       accuracyCircle.setLatLng(nextLatLng).setRadius(Math.max(accuracy, 10));
-      updateEnergy(nextLatLng);
       setStatusForPosition(nextLatLng, accuracy);
 
       if (!hasFirstLock) {
@@ -609,13 +625,15 @@
           duration: 1.4,
         });
         hasFirstLock = true;
-      } else {
+      } else if (movedDistance >= 4 || accuracy <= 25) {
         map.panTo(nextLatLng, {
           animate: true,
-          duration: 1.2,
+          duration: 0.8,
           easeLinearity: 0.25,
         });
       }
+
+      lastLatLng = nextLatLng;
     }
 
     function handleLocationError(message) {
@@ -634,6 +652,22 @@
         navigator.geolocation.clearWatch(watchId);
       }
 
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          updatePlayer(
+            position.coords.latitude,
+            position.coords.longitude,
+            position.coords.accuracy || 20
+          );
+        },
+        () => {},
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           updatePlayer(
@@ -647,8 +681,8 @@
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 1000,
+          timeout: 15000,
+          maximumAge: 0,
         }
       );
     }
@@ -658,18 +692,7 @@
       startWatchingLocation();
     });
 
-    themeButton.addEventListener('click', () => {
-      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-      map.removeLayer(tileLayer);
-      tileLayer = createTileLayer(currentTheme).addTo(map);
-      themeButton.textContent = currentTheme === 'light' ? '다크 맵 전환' : '라이트 맵 전환';
-    });
-
-    demoButton.addEventListener('click', () => {
-      updatePlayer(37.5663, 126.9779, 18);
-      handleLocationError('샘플 위치로 전환했습니다. 실제 GPS 테스트는 모바일 브라우저 권한 허용 후 확인하세요.');
-    });
-
+    fetchOfficialStations();
     startWatchingLocation();
   </script>
 </body>
