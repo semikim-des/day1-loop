@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>따릉몬: 에너토피아의 재건</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff');
+
+    :root {
+      --bg-dark: #08110d;
+      --bg-panel: #dce7d2;
+      --bg-screen: #9abf83;
+      --ink: #102016;
+      --ink-soft: #2d5035;
+      --line: #203323;
+      --green: #4dff8f;
+      --green-deep: #198754;
+      --white-bike: #f5fff9;
+      --pink: #ff6dc7;
+      --blue: #66d5ff;
+      --gold: #ffd75a;
+      --danger: #ff7f6b;
+      --shadow: rgba(0, 0, 0, 0.28);
+      --pixel-shadow: 4px 4px 0 rgba(16, 32, 22, 0.95);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(77, 255, 143, 0.15), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(102, 213, 255, 0.14), transparent 28%),
+        linear-gradient(180deg, #09100d 0%, #11221b 54%, #08110d 100%);
+      color: var(--ink);
+      font-family: 'DungGeunMo', monospace;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const BIKE_LEVELS = [
+      {
+        min: 0,
+        title: 'Lv.1 자린이',
+        subtitle: '구슬 바퀴 수습 라이더',
+        bike: '동그란 구슬 휠',
+        aura: '흑백 CRT 노이즈',
+        reward: '오프닝 도감 해금',
+      },
+      {
+        min: 10,
+        title: 'Lv.10 골목 대장',
+        subtitle: '기본 따릉이 확보',
+        bike: '바구니 달린 따릉이',
+        aura: '화이트&그린 점멸',
+        reward: '동호회 채널 등장 연출',
+      },
+      {
+        min: 50,
+        title: 'Lv.50 따릉이 마스터',
+        subtitle: '도심 에너지 엔지니어',
+        bike: '카본 로드 바이크',
+        aura: '초록 오라 링',
+        reward: '오라 이펙트 + 희귀 스킨 슬롯',
+      },
+      {
+        min: 99,
+        title: 'Lv.99 전설의 라이더',
+        subtitle: '에너토피아의 발전기',
+        bike: '날개 달린 미래형 바이크',
+        aura: '황금 코어 + 네온 잔상',
+        reward: '전용 테마곡 + 황금 따릉이',
+      },
+    ];
+
+    const STATIONS = [
+      {
+        id: 'city-hall',
+        name: '시청 포켓센터',
+        boss: '그린 큐레이터',
+        distance: 0.4,
+        status: '안전 충전 구역',
+        reward: '화이트 네온 배지',
+        accent: '#4dff8f',
+      },
+      {
+        id: 'han-river',
+        name: '한강 라이딩 루프',
+        boss: '리버 스카우트',
+        distance: 2.1,
+        status: '강풍 주의보',
+        reward: '블루 부스트 칩',
+        accent: '#66d5ff',
+      },
+      {
+        id: 'night-market',
+        name: '야시장 센터',
+        boss: '핑크 메신저',
+        distance: 4.8,
+        status: '야간 네온 해금',
+        reward: '사이버 펑크 램프',
+        accent: '#ff6dc7',
+      },
+    ];
+
+    const OPENING_LINES = [
+      '삐-릭. 시스템 가동... 에너지 잔량 0.1%.',
+      '라이더여, 당신의 따릉이가 세상을 밝힐 유일한 희망입니다.',
+      '지금 페달을 밟아 에너지를 생성하고, 어둠에 잠긴 픽셀 시티를 구하세요.',
+    ];
+
+    const EVENT_POOL = [
+      {
+        title: '황금 도토리 발견',
+        body: '희귀 코스튬 교환권 파편을 1개 확보했습니다.',
+        rarity: 'ULTRA RARE 1%',
+        accent: '#ffd75a',
+      },
+      {
+        title: '강풍 주의보 버프',
+        body: '역풍을 뚫은 라이더에게 에너지 2배 보정이 적용됩니다.',
+        rarity: 'WIND BOOST',
+        accent: '#66d5ff',
+      },
+      {
+        title: '화이트 네온 정비',
+        body: '바이크 프레임이 정비되어 주간 점수에 추가 보너스가 붙습니다.',
+        rarity: 'PIT BONUS',
+        accent: '#4dff8f',
+      },
+    ];
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+          Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    const getLevelMeta = (distance) => {
+      return [...BIKE_LEVELS].reverse().find((item) => distance >= item.min) || BIKE_LEVELS[0];
+    };
+
+    function PixelBike({ level, auraColor = '#4dff8f', nightMode = false }) {
+      const glow = nightMode ? 'drop-shadow(0 0 8px #ff6dc7) drop-shadow(0 0 10px #66d5ff)' : `drop-shadow(0 0 8px ${auraColor})`;
+      const wing = level.min >= 99;
+      const road = level.min >= 50;
+
+      return (
+        <div style={{ position: 'relative', width: 108, height: 92, margin: '0 auto', filter: glow }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'radial-gradient(circle, rgba(77,255,143,0.16), transparent 62%)' }} />
+          {wing && (
+            <>
+              <div style={{ position: 'absolute', top: 18, left: -10, width: 28, height: 12, background: '#f9f8ed', clipPath: 'polygon(0 50%, 100% 0, 100% 100%)' }} />
+              <div style={{ position: 'absolute', top: 18, right: -10, width: 28, height: 12, background: '#f9f8ed', clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} />
+            </>
+          )}
+          <div style={{ position: 'absolute', left: 10, bottom: 12, width: 30, height: 30, border: '5px solid #102016', borderRadius: '50%', background: road ? '#dff9eb' : '#d9ddd8' }} />
+          <div style={{ position: 'absolute', right: 10, bottom: 12, width: 30, height: 30, border: '5px solid #102016', borderRadius: '50%', background: road ? '#dff9eb' : '#d9ddd8' }} />
+          <div style={{ position: 'absolute', left: 30, bottom: 40, width: 28, height: 6, background: '#f5fff9', border: '3px solid #102016' }} />
+          <div style={{ position: 'absolute', left: 42, bottom: 48, width: 6, height: 20, background: '#f5fff9', border: '3px solid #102016' }} />
+          <div style={{ position: 'absolute', right: 34, bottom: 48, width: 18, height: 6, background: '#4dff8f', border: '3px solid #102016' }} />
+          <div style={{ position: 'absolute', left: 52, bottom: 54, width: 18, height: 6, background: '#4dff8f', border: '3px solid #102016', transform: 'rotate(-24deg)', transformOrigin: 'left center' }} />
+          <div style={{ position: 'absolute', left: 53, bottom: 30, width: 24, height: 6, background: '#4dff8f', border: '3px solid #102016', transform: 'rotate(24deg)', transformOrigin: 'left center' }} />
+          <div style={{ position: 'absolute', right: 30, bottom: 58, width: 20, height: 5, background: '#102016' }} />
+          <div style={{ position: 'absolute', left: 35, bottom: 62, width: 18, height: 5, background: '#102016' }} />
+          <div style={{ position: 'absolute', left: 50, bottom: 58, width: 18, height: 18, background: nightMode ? '#ff6dc7' : '#ffd75a', border: '4px solid #102016' }} />
+          <div style={{ position: 'absolute', left: 45, bottom: 76, width: 28, height: 10, background: '#102016' }} />
+        </div>
+      );
+    }
+
+    function GameApp() {
+      const [userLocation, setUserLocation] = React.useState(null);
+      const [locationError, setLocationError] = React.useState('');
+      const [openingIndex, setOpeningIndex] = React.useState(0);
+      const [distanceKm, setDistanceKm] = React.useState(18);
+      const [energy, setEnergy] = React.useState(1240);
+      const [cityLight, setCityLight] = React.useState(32);
+      const [eventCard, setEventCard] = React.useState(EVENT_POOL[0]);
+      const [nightMode, setNightMode] = React.useState(false);
+      const [rankBoard, setRankBoard] = React.useState([
+        { name: '민수', score: 1820, king: true },
+        { name: '세미', score: 1670, king: false },
+        { name: '현우', score: 1410, king: false },
+      ]);
+
+      React.useEffect(() => {
+        const timer = window.setInterval(() => {
+          setOpeningIndex((prev) => (prev < OPENING_LINES.length - 1 ? prev + 1 : prev));
+        }, 1300);
+
+        return () => window.clearInterval(timer);
+      }, []);
+
+      React.useEffect(() => {
+        if (!navigator.geolocation) {
+          setLocationError('GPS를 지원하지 않는 브라우저입니다.');
+          return;
+        }
+
+        const watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+            setLocationError('');
+          },
+          () => {
+            setLocationError('위치 권한이 꺼져 있어 샘플 데이터로 동작 중입니다.');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 6000,
+            maximumAge: 1500,
+          }
+        );
+
+        return () => navigator.geolocation.clearWatch(watchId);
+      }, []);
+
+      const level = getLevelMeta(distanceKm);
+      const king = rankBoard[0];
+      const totalLights = 10;
+      const activeLights = Math.max(1, Math.round((cityLight / 100) * totalLights));
+
+      const stationCards = STATIONS.map((station, index) => {
+        const dynamicDistance =
+          userLocation && index === 0
+            ? Math.max(
+                0.1,
+                calculateDistance(userLocation.lat, userLocation.lng, 37.5665 + index * 0.004, 126.978 + index * 0.006) / 1000
+              ).toFixed(1)
+            : station.distance.toFixed(1);
+
+        return {
+          ...station,
+          dynamicDistance,
+        };
+      });
+
+      const handleRideSync = () => {
+        const gain = 6 + Math.floor(Math.random() * 8);
+        const energyGain = 120 + Math.floor(Math.random() * 90);
+        const lightGain = Math.min(100, cityLight + 6 + Math.floor(Math.random() * 8));
+        const pickedEvent = Math.random() < 0.14 ? EVENT_POOL[0] : EVENT_POOL[1 + Math.floor(Math.random() * 2)];
+
+        setDistanceKm((prev) => prev + gain);
+        setEnergy((prev) => prev + energyGain);
+        setCityLight(lightGain);
+        setEventCard(pickedEvent);
+        setNightMode((prev) => !prev);
+
+        setRankBoard((prev) => {
+          const updated = prev.map((member, index) =>
+            index === 1 ? { ...member, score: member.score + energyGain } : member
+          ).sort((a, b) => b.score - a.score);
+          return updated;
+        });
+      };
+
+      return (
+        <div style={styles.appShell}>
+          <div style={styles.topGlow} />
+          <main style={styles.phoneStage}>
+            <section style={styles.gameboyShell}>
+              <div style={styles.deviceHeader}>
+                <div style={styles.deviceDots}>
+                  <span style={{ ...styles.dot, background: '#ff6b6b' }} />
+                  <span style={{ ...styles.dot, background: '#ffd75a' }} />
+                  <span style={{ ...styles.dot, background: '#4dff8f' }} />
+                </div>
+                <div style={styles.deviceBrand}>DDARUNGMON PIXEL LINK</div>
+              </div>
+
+              <div style={styles.screenWrap}>
+                <div style={styles.screenScanline} />
+                <div style={styles.screenHeader}>
+                  <div>
+                    <div style={styles.kicker}>ENERGY TOPIA</div>
+                    <h1 style={styles.title}>에너토피아의 재건</h1>
+                  </div>
+                  <button style={styles.ghostButton} onClick={() => setNightMode((prev) => !prev)}>
+                    {nightMode ? 'DAY' : 'NIGHT'}
+                  </button>
+                </div>
+
+                <section style={styles.openingPanel}>
+                  <div style={styles.openingTextArea}>
+                    {OPENING_LINES.slice(0, openingIndex + 1).map((line, index) => (
+                      <p key={index} style={styles.openingLine}>{line}</p>
+                    ))}
+                  </div>
+                  <div style={styles.heroStage}>
+                    <div style={styles.heroAura(nightMode)}>
+                      <PixelBike level={level} auraColor={eventCard.accent} nightMode={nightMode} />
+                    </div>
+                    <div style={styles.heroInfoCard}>
+                      <div style={styles.heroLabel}>현재 라이더 등급</div>
+                      <div style={styles.heroRank}>{level.title}</div>
+                      <div style={styles.heroSub}>{level.subtitle}</div>
+                      <div style={styles.heroBike}>{level.bike}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section style={styles.dashboardGrid}>
+                  <article style={styles.primaryCard}>
+                    <div style={styles.cardHead}>
+                      <span>세계관 코어</span>
+                      <span style={styles.statusPill}>LIVE LOOP</span>
+                    </div>
+                    <div style={styles.cityMeter}>
+                      {Array.from({ length: totalLights }).map((_, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            ...styles.cityLightCell,
+                            background: index < activeLights
+                              ? nightMode
+                                ? 'linear-gradient(180deg, #ff6dc7, #66d5ff)'
+                                : 'linear-gradient(180deg, #4dff8f, #d7fff2)'
+                              : '#435246',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={styles.metricRow}>
+                      <div style={styles.metricBox}>
+                        <span style={styles.metricLabel}>총 주행</span>
+                        <strong style={styles.metricValue}>{distanceKm}km</strong>
+                      </div>
+                      <div style={styles.metricBox}>
+                        <span style={styles.metricLabel}>에너지</span>
+                        <strong style={styles.metricValue}>{energy}EP</strong>
+                      </div>
+                      <div style={styles.metricBox}>
+                        <span style={styles.metricLabel}>도시 점등률</span>
+                        <strong style={styles.metricValue}>{cityLight}%</strong>
+                      </div>
+                    </div>
+                    <div style={styles.flavorCopy}>
+                      실제 주행을 인증하면 전력 자원이 누적되고, 픽셀 시티가 흑백에서 네온으로 복구됩니다.
+                    </div>
+                  </article>
+
+                  <article style={styles.sideCard}>
+                    <div style={styles.cardHead}>
+                      <span>왕의 권한</span>
+                      <span style={{ ...styles.statusPill, background: '#ffd75a', color: '#102016' }}>KING</span>
+                    </div>
+                    <div style={styles.kingBanner}>
+                      <div style={styles.kingName}>{king.name}</div>
+                      <div style={styles.kingAura}>현재 도시 전력 {Math.min(95, Math.round(king.score / 25))}% 공급 중</div>
+                    </div>
+                    <div style={styles.kingReward}>주간 1위 보상: 왕관 아우라, 슬랙 칭호, 다음 주 점수 1.2배</div>
+                  </article>
+
+                  <article style={styles.sideCard}>
+                    <div style={styles.cardHead}>
+                      <span>랜덤 이벤트</span>
+                      <span style={{ ...styles.statusPill, background: eventCard.accent, color: '#102016' }}>{eventCard.rarity}</span>
+                    </div>
+                    <div style={styles.eventTitle}>{eventCard.title}</div>
+                    <div style={styles.eventBody}>{eventCard.body}</div>
+                    <div style={styles.eventHint}>스크린샷 OCR 인증 시 낮은 확률로 연출됩니다.</div>
+                  </article>
+                </section>
+
+                <section style={styles.sectionBlock}>
+                  <div style={styles.sectionTitleRow}>
+                    <h2 style={styles.sectionTitle}>주행 인증 코어 루프</h2>
+                    <div style={styles.sectionBadge}>GPS → EP → RANK</div>
+                  </div>
+                  <div style={styles.loopFlow}>
+                    <div style={styles.loopNode}>실제 주행</div>
+                    <div style={styles.loopArrow}>▶</div>
+                    <div style={styles.loopNode}>에너지 획득</div>
+                    <div style={styles.loopArrow}>▶</div>
+                    <div style={styles.loopNode}>주간 왕좌전</div>
+                  </div>
+                  <button style={styles.ctaButton} onClick={handleRideSync}>
+                    주행 인증 시뮬레이션
+                  </button>
+                </section>
+
+                <section style={styles.sectionBlock}>
+                  <div style={styles.sectionTitleRow}>
+                    <h2 style={styles.sectionTitle}>등급 시스템</h2>
+                    <div style={styles.sectionBadge}>COLLECTION RPG</div>
+                  </div>
+                  <div style={styles.rankList}>
+                    {BIKE_LEVELS.map((item) => (
+                      <div
+                        key={item.title}
+                        style={{
+                          ...styles.rankCard,
+                          borderColor: item.min === level.min ? '#4dff8f' : '#35523d',
+                          boxShadow: item.min === level.min ? '0 0 0 3px rgba(77,255,143,0.22)' : 'none',
+                        }}
+                      >
+                        <div style={styles.rankTitle}>{item.title}</div>
+                        <div style={styles.rankSub}>{item.bike}</div>
+                        <div style={styles.rankReward}>{item.reward}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section style={styles.sectionBlock}>
+                  <div style={styles.sectionTitleRow}>
+                    <h2 style={styles.sectionTitle}>포켓센터 거점</h2>
+                    <div style={styles.sectionBadge}>MOBILE FIRST</div>
+                  </div>
+                  <div style={styles.stationList}>
+                    {stationCards.map((station) => (
+                      <div key={station.id} style={{ ...styles.stationCard, borderColor: station.accent }}>
+                        <div style={styles.stationTop}>
+                          <div>
+                            <div style={styles.stationName}>{station.name}</div>
+                            <div style={styles.stationBoss}>{station.boss}</div>
+                          </div>
+                          <div style={{ ...styles.stationDistance, color: station.accent }}>{station.dynamicDistance}km</div>
+                        </div>
+                        <div style={styles.stationMeta}>상태: {station.status}</div>
+                        <div style={styles.stationMeta}>드롭: {station.reward}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section style={styles.sectionBlock}>
+                  <div style={styles.sectionTitleRow}>
+                    <h2 style={styles.sectionTitle}>주간 랭킹전</h2>
+                    <div style={styles.sectionBadge}>SLACK READY</div>
+                  </div>
+                  <div style={styles.rankingPanel}>
+                    {rankBoard.map((member, index) => (
+                      <div key={member.name} style={styles.rankingRow(member.king)}>
+                        <div style={styles.rankNumber}>{index + 1}</div>
+                        <div style={styles.rankMember}>
+                          <div style={styles.rankMemberName}>{member.name}</div>
+                          <div style={styles.rankMemberRole}>{member.king ? '주간 왕 오라 활성화' : '도시 전력 서포터'}</div>
+                        </div>
+                        <div style={styles.rankScore}>{member.score}EP</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section style={styles.sectionBlock}>
+                  <div style={styles.sectionTitleRow}>
+                    <h2 style={styles.sectionTitle}>UX 테마 제안</h2>
+                    <div style={styles.sectionBadge}>PIXEL OPS</div>
+                  </div>
+                  <div style={styles.themeNotes}>
+                    <div style={styles.noteCard}>
+                      <strong>아트 디렉션</strong>
+                      <span>포켓몬 레드의 저채도 스타트 화면에서 시작해 인증마다 화이트&그린 네온이 복구되는 방식.</span>
+                    </div>
+                    <div style={styles.noteCard}>
+                      <strong>캐릭터</strong>
+                      <span>클로드/마리오식 3등신 도트 캐릭터, 자전거 휠 백팩 또는 바이크 실루엣을 항상 포함.</span>
+                    </div>
+                    <div style={styles.noteCard}>
+                      <strong>버튼 UX</strong>
+                      <span>큰 픽셀 블록 버튼, 하단 엄지 영역 집중 배치, 기록보다 보상과 연출이 먼저 보이도록 구성.</span>
+                    </div>
+                  </div>
+                </section>
+
+                <footer style={styles.footer}>
+                  {locationError ? locationError : userLocation
+                    ? `GPS 동기화됨 ${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)}`
+                    : 'GPS 연결 중...'}
+                </footer>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    const styles = {
+      appShell: {
+        minHeight: '100vh',
+        position: 'relative',
+        padding: '18px 12px 34px',
+      },
+      topGlow: {
+        position: 'fixed',
+        top: -80,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 300,
+        height: 180,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(77,255,143,0.18), transparent 70%)',
+        pointerEvents: 'none',
+      },
+      phoneStage: {
+        width: '100%',
+        maxWidth: 440,
+        margin: '0 auto',
+      },
+      gameboyShell: {
+        background: 'linear-gradient(180deg, #f5f2d9 0%, #d9d1b4 100%)',
+        border: '4px solid #102016',
+        borderRadius: 28,
+        boxShadow: '0 18px 40px rgba(0, 0, 0, 0.4), 0 0 0 8px rgba(255,255,255,0.06)',
+        padding: 12,
+      },
+      deviceHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '8px 6px 12px',
+        color: '#314237',
+        fontSize: 11,
+      },
+      deviceDots: {
+        display: 'flex',
+        gap: 5,
+      },
+      dot: {
+        width: 10,
+        height: 10,
+        borderRadius: '50%',
+        border: '2px solid #102016',
+      },
+      deviceBrand: {
+        letterSpacing: '0.04em',
+      },
+      screenWrap: {
+        position: 'relative',
+        border: '4px solid #102016',
+        borderRadius: 18,
+        padding: 14,
+        background: 'linear-gradient(180deg, #b8d1a1 0%, #93b483 100%)',
+        overflow: 'hidden',
+      },
+      screenScanline: {
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: 0.1,
+        backgroundImage: 'linear-gradient(transparent 0, transparent 50%, rgba(16,32,22,0.22) 50%, rgba(16,32,22,0.22) 100%)',
+        backgroundSize: '100% 6px',
+      },
+      screenHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginBottom: 12,
+      },
+      kicker: {
+        fontSize: 10,
+        color: '#35523d',
+        marginBottom: 4,
+      },
+      title: {
+        margin: 0,
+        fontSize: 22,
+        lineHeight: 1.15,
+        color: '#102016',
+      },
+      ghostButton: {
+        border: '3px solid #102016',
+        background: '#f5fff9',
+        color: '#102016',
+        boxShadow: '3px 3px 0 #102016',
+        padding: '8px 10px',
+        minWidth: 70,
+        fontSize: 11,
+      },
+      openingPanel: {
+        background: 'rgba(245, 255, 249, 0.56)',
+        border: '3px solid #102016',
+        boxShadow: '4px 4px 0 #102016',
+        padding: 12,
+        marginBottom: 12,
+      },
+      openingTextArea: {
+        background: 'rgba(16, 32, 22, 0.92)',
+        border: '3px solid #dff9eb',
+        padding: 10,
+        minHeight: 98,
+        color: '#dff9eb',
+        marginBottom: 12,
+      },
+      openingLine: {
+        margin: '0 0 8px 0',
+        fontSize: 12,
+        lineHeight: 1.45,
+      },
+      heroStage: {
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: 10,
+      },
+      heroAura: (nightMode) => ({
+        border: '3px solid #102016',
+        padding: '10px 8px',
+        background: nightMode
+          ? 'linear-gradient(180deg, rgba(28,33,46,0.95), rgba(24,48,65,0.95))'
+          : 'linear-gradient(180deg, rgba(245,255,249,0.8), rgba(212,247,223,0.92))',
+      }),
+      heroInfoCard: {
+        border: '3px solid #102016',
+        background: '#f5fff9',
+        padding: 10,
+      },
+      heroLabel: {
+        fontSize: 10,
+        color: '#35523d',
+        marginBottom: 4,
+      },
+      heroRank: {
+        fontSize: 18,
+        marginBottom: 6,
+      },
+      heroSub: {
+        fontSize: 11,
+        color: '#35523d',
+        marginBottom: 6,
+      },
+      heroBike: {
+        display: 'inline-block',
+        background: '#102016',
+        color: '#dff9eb',
+        padding: '5px 8px',
+        fontSize: 10,
+      },
+      dashboardGrid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: 10,
+        marginBottom: 12,
+      },
+      primaryCard: {
+        background: '#f5fff9',
+        border: '3px solid #102016',
+        boxShadow: '4px 4px 0 #102016',
+        padding: 12,
+      },
+      sideCard: {
+        background: 'rgba(245,255,249,0.88)',
+        border: '3px solid #102016',
+        padding: 12,
+      },
+      cardHead: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 11,
+        marginBottom: 10,
+      },
+      statusPill: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 24,
+        padding: '4px 8px',
+        border: '2px solid #102016',
+        background: '#102016',
+        color: '#dff9eb',
+        fontSize: 10,
+      },
+      cityMeter: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(10, 1fr)',
+        gap: 5,
+        marginBottom: 12,
+      },
+      cityLightCell: {
+        height: 20,
+        border: '2px solid #102016',
+      },
+      metricRow: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 8,
+      },
+      metricBox: {
+        border: '2px solid #102016',
+        background: '#dff9eb',
+        padding: '8px 6px',
+      },
+      metricLabel: {
+        display: 'block',
+        fontSize: 9,
+        color: '#35523d',
+        marginBottom: 4,
+      },
+      metricValue: {
+        fontSize: 15,
+      },
+      flavorCopy: {
+        marginTop: 10,
+        fontSize: 11,
+        lineHeight: 1.45,
+        color: '#35523d',
+      },
+      kingBanner: {
+        padding: 10,
+        border: '2px solid #102016',
+        background: 'linear-gradient(135deg, #ffd75a, #fff0b2)',
+        marginBottom: 10,
+      },
+      kingName: {
+        fontSize: 18,
+        marginBottom: 5,
+      },
+      kingAura: {
+        fontSize: 11,
+        lineHeight: 1.35,
+      },
+      kingReward: {
+        fontSize: 11,
+        lineHeight: 1.4,
+        color: '#35523d',
+      },
+      eventTitle: {
+        fontSize: 16,
+        marginBottom: 6,
+      },
+      eventBody: {
+        fontSize: 11,
+        lineHeight: 1.45,
+        marginBottom: 8,
+      },
+      eventHint: {
+        color: '#35523d',
+        fontSize: 10,
+      },
+      sectionBlock: {
+        marginBottom: 12,
+        background: 'rgba(245,255,249,0.82)',
+        border: '3px solid #102016',
+        boxShadow: '4px 4px 0 #102016',
+        padding: 12,
+      },
+      sectionTitleRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+      },
+      sectionTitle: {
+        margin: 0,
+        fontSize: 16,
+      },
+      sectionBadge: {
+        fontSize: 9,
+        padding: '4px 6px',
+        border: '2px solid #102016',
+        background: '#dff9eb',
+      },
+      loopFlow: {
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr auto 1fr',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 12,
+      },
+      loopNode: {
+        border: '2px solid #102016',
+        background: '#dff9eb',
+        padding: '10px 6px',
+        textAlign: 'center',
+        fontSize: 10,
+        lineHeight: 1.4,
+        minHeight: 58,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      loopArrow: {
+        color: '#35523d',
+        fontSize: 14,
+      },
+      ctaButton: {
+        width: '100%',
+        border: '3px solid #102016',
+        background: 'linear-gradient(180deg, #4dff8f, #29b765)',
+        color: '#102016',
+        boxShadow: '4px 4px 0 #102016',
+        padding: '14px 12px',
+        fontSize: 14,
+      },
+      rankList: {
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: 8,
+      },
+      rankCard: {
+        background: '#f5fff9',
+        border: '3px solid #35523d',
+        padding: 10,
+      },
+      rankTitle: {
+        fontSize: 14,
+        marginBottom: 4,
+      },
+      rankSub: {
+        fontSize: 11,
+        color: '#35523d',
+        marginBottom: 6,
+      },
+      rankReward: {
+        fontSize: 10,
+        color: '#102016',
+      },
+      stationList: {
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: 8,
+      },
+      stationCard: {
+        background: '#f5fff9',
+        border: '3px solid',
+        padding: 10,
+      },
+      stationTop: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 8,
+        marginBottom: 6,
+      },
+      stationName: {
+        fontSize: 14,
+        marginBottom: 4,
+      },
+      stationBoss: {
+        fontSize: 10,
+        color: '#35523d',
+      },
+      stationDistance: {
+        fontSize: 16,
+      },
+      stationMeta: {
+        fontSize: 11,
+        color: '#35523d',
+        marginTop: 4,
+      },
+      rankingPanel: {
+        display: 'grid',
+        gap: 8,
+      },
+      rankingRow: (king) => ({
+        display: 'grid',
+        gridTemplateColumns: '32px 1fr auto',
+        gap: 10,
+        alignItems: 'center',
+        padding: 10,
+        border: '3px solid #102016',
+        background: king ? 'linear-gradient(135deg, #fff0b2, #ffd75a)' : '#f5fff9',
+      }),
+      rankNumber: {
+        width: 32,
+        height: 32,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '2px solid #102016',
+        background: '#102016',
+        color: '#dff9eb',
+        fontSize: 12,
+      },
+      rankMember: {
+        minWidth: 0,
+      },
+      rankMemberName: {
+        fontSize: 14,
+        marginBottom: 4,
+      },
+      rankMemberRole: {
+        fontSize: 10,
+        color: '#35523d',
+      },
+      rankScore: {
+        fontSize: 12,
+      },
+      themeNotes: {
+        display: 'grid',
+        gap: 8,
+      },
+      noteCard: {
+        display: 'grid',
+        gap: 6,
+        background: '#f5fff9',
+        border: '2px solid #102016',
+        padding: 10,
+        fontSize: 11,
+        lineHeight: 1.45,
+      },
+      footer: {
+        marginTop: 4,
+        padding: '10px 8px 4px',
+        fontSize: 10,
+        color: '#35523d',
+        textAlign: 'center',
+      },
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GameApp />);
+  </script>
+</body>
+</html>
