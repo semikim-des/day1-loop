@@ -122,6 +122,12 @@
       gap: 8px;
     }
 
+    .top-right-overlay {
+      top: max(12px, env(safe-area-inset-top));
+      right: 12px;
+      width: auto;
+    }
+
     .bottom-overlay {
       left: 12px;
       right: 12px;
@@ -159,6 +165,25 @@
       background: rgba(66, 215, 125, 0.18);
       color: var(--green-deep);
       font-size: 10px;
+    }
+
+    .claim-count-card {
+      display: grid;
+      gap: 3px;
+      min-width: 84px;
+      padding: 10px 12px;
+      text-align: right;
+    }
+
+    .claim-count-label {
+      font-size: 8px;
+      color: var(--text-soft);
+    }
+
+    .claim-count-value {
+      font-size: 15px;
+      color: #8b6200;
+      line-height: 1.2;
     }
 
     .hud-title {
@@ -331,6 +356,17 @@
       box-shadow: 0 8px 20px rgba(24, 49, 39, 0.12);
     }
 
+    .station-label.claimed {
+      border: 1px solid rgba(209, 163, 0, 0.28);
+      background: rgba(255, 247, 212, 0.92);
+    }
+
+    .station-owner {
+      margin-top: 3px;
+      font-size: 8px;
+      color: #8b6200;
+    }
+
     .totem-marker {
       width: 18px;
       height: 18px;
@@ -390,6 +426,13 @@
           <span>근처 대여소 수</span>
           <strong id="nearbyCount">0개</strong>
         </div>
+      </section>
+    </div>
+
+    <div class="map-overlay top-right-overlay">
+      <section class="floating-card claim-count-card">
+        <div class="claim-count-label">내 점령 땅</div>
+        <div class="claim-count-value" id="claimCountValue">0개</div>
       </section>
     </div>
 
@@ -484,6 +527,7 @@
     const nearbyCount = document.getElementById('nearbyCount');
     const authButton = document.getElementById('authButton');
     const locateButton = document.getElementById('locateButton');
+    const claimCountValue = document.getElementById('claimCountValue');
     const app = document.getElementById('app');
 
     let watchId = null;
@@ -495,6 +539,51 @@
     let currentNearestStation = null;
     let claimLocked = false;
     let claimedStation = null;
+    let playerName = localStorage.getItem('ddarungmon-player-name') || '';
+    let claimOwners = loadClaimOwners();
+
+    function loadClaimOwners() {
+      try {
+        const raw = localStorage.getItem('ddarungmon-claims');
+        return raw ? JSON.parse(raw) : {};
+      } catch (error) {
+        console.error(error);
+        return {};
+      }
+    }
+
+    function saveClaimOwners() {
+      localStorage.setItem('ddarungmon-claims', JSON.stringify(claimOwners));
+    }
+
+    function getClaimInfo(stationId) {
+      return claimOwners[stationId] || null;
+    }
+
+    function ensurePlayerName() {
+      if (playerName) {
+        return playerName;
+      }
+
+      const nextName = window.prompt('점령자 이름을 입력해주세요.', '라이더')?.trim();
+
+      if (!nextName) {
+        return '';
+      }
+
+      playerName = nextName;
+      localStorage.setItem('ddarungmon-player-name', playerName);
+      updateClaimCountHud();
+      return playerName;
+    }
+
+    function updateClaimCountHud() {
+      const myClaimCount = playerName
+        ? Object.values(claimOwners).filter((claimInfo) => claimInfo.owner === playerName).length
+        : 0;
+
+      claimCountValue.textContent = `${myClaimCount}개`;
+    }
 
     function formatCoords(latlng) {
       return `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
@@ -558,35 +647,46 @@
       });
     }
 
-    function renderClaimZone(station) {
+    function renderClaimZones() {
       claimLayer.clearLayers();
 
-      if (!station) {
-        return;
-      }
+      stationData.forEach((station) => {
+        const claimInfo = getClaimInfo(station.id);
 
-      L.polygon(buildClaimPolygon(station.latlng), {
-        color: '#d1a300',
-        weight: 2,
-        opacity: 0.96,
-        fillColor: '#ffd55b',
-        fillOpacity: 0.22,
-      }).addTo(claimLayer);
+        if (!claimInfo) {
+          return;
+        }
 
-      L.circle(station.latlng, {
-        radius: 56,
-        color: '#d1a300',
-        weight: 1,
-        opacity: 0.72,
-        fillColor: '#fff1bf',
-        fillOpacity: 0.28,
-      }).addTo(claimLayer);
+        L.polygon(buildClaimPolygon(station.latlng), {
+          color: '#d1a300',
+          weight: 2,
+          opacity: 0.96,
+          fillColor: '#ffd55b',
+          fillOpacity: 0.22,
+        }).addTo(claimLayer);
+
+        L.circle(station.latlng, {
+          radius: 56,
+          color: '#d1a300',
+          weight: 1,
+          opacity: 0.72,
+          fillColor: '#fff1bf',
+          fillOpacity: 0.28,
+        }).addTo(claimLayer);
+      });
     }
 
     function syncActionButtons() {
+      const nearestClaim = currentNearestStation ? getClaimInfo(currentNearestStation.id) : null;
+
       if (claimLocked && claimedStation) {
         authButton.classList.remove('is-hidden');
-        authButton.textContent = '땅따먹기 종료';
+        authButton.textContent = '점령 보기 종료';
+        return;
+      }
+
+      if (nearestClaim) {
+        authButton.classList.add('is-hidden');
         return;
       }
 
@@ -651,6 +751,8 @@
           .filter(Boolean);
 
         stationLoadState = 'ready';
+        renderClaimZones();
+        updateClaimCountHud();
         syncActionButtons();
       } catch (error) {
         stationLoadState = 'error';
@@ -660,6 +762,7 @@
         stationValue.textContent = '공식 데이터 연결 실패';
         nearbyCount.textContent = '0개';
         statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 환경 또는 네트워크 정책 때문에 차단될 수 있어요.';
+        updateClaimCountHud();
         syncActionButtons();
         console.error(error);
       }
@@ -683,13 +786,17 @@
       const stationsToRender = (visibleStations.length > 0 ? visibleStations : sortedStations.slice(0, 10)).slice(0, 12);
 
       stationsToRender.forEach((station, index) => {
+        const claimInfo = getClaimInfo(station.id);
         const marker = L.marker(station.latlng, {
           icon: L.divIcon({
             className: '',
             html: `
               <div class="station-marker">
                 <div class="station-pin ${station.type}"></div>
-                <div class="station-label">${station.name}<br>${Math.round(station.distance)}m · ${station.available}대</div>
+                <div class="station-label ${claimInfo ? 'claimed' : ''}">
+                  ${station.name}<br>${Math.round(station.distance)}m · ${station.available}대
+                  ${claimInfo ? `<div class="station-owner">${claimInfo.owner} 점령</div>` : ''}
+                </div>
               </div>
             `,
             iconSize: [126, 56],
@@ -698,7 +805,10 @@
           zIndexOffset: index === 0 ? 300 : 0,
         });
 
-        marker.bindPopup(`${station.name}<br>내 위치에서 ${Math.round(station.distance)}m<br>대여 가능 ${station.available}대`);
+        marker.bindPopup(
+          `${station.name}<br>내 위치에서 ${Math.round(station.distance)}m<br>대여 가능 ${station.available}대` +
+          `${claimInfo ? `<br>점령자 ${claimInfo.owner}` : ''}`
+        );
         marker.addTo(stationLayer);
       });
     }
@@ -727,21 +837,28 @@
       const stationsInRange = stationData.filter((station) => map.distance(latlng, station.latlng) <= DISPLAY_RADIUS_METERS);
       renderStationsAround(latlng);
       currentNearestStation = nearestStation;
+      const nearestClaim = getClaimInfo(nearestStation.id);
 
       if (claimLocked && claimedStation) {
-        stationValue.textContent = `${claimedStation.name} · 점령 완료`;
+        const claimInfo = getClaimInfo(claimedStation.id);
+        stationValue.textContent = `${claimedStation.name} · ${claimInfo ? claimInfo.owner : '점령'} 점령`;
         nearbyCount.textContent = `${stationsInRange.length}개`;
-        statusMessage.textContent = `${claimedStation.name} 인증 성공. 땅따먹기 모드라 지도를 잠시 잠가뒀어요.`;
-        rideState.textContent = '점령 모드';
-        renderClaimZone(claimedStation);
+        statusMessage.textContent = `${claimedStation.name}은 이제 ${claimInfo ? claimInfo.owner : '라이더'}의 땅입니다. 지도는 점령 구역을 보여주기 위해 잠시 고정돼 있어요.`;
+        rideState.textContent = '거점 점령';
+        renderClaimZones();
         syncActionButtons();
         return;
       }
 
-      stationValue.textContent = `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
+      stationValue.textContent = nearestClaim
+        ? `${nearestStation.name} · ${nearestClaim.owner} 점령`
+        : `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
       nearbyCount.textContent = `${stationsInRange.length}개`;
 
-      if (nearestStation.distance <= 120) {
+      if (nearestClaim && nearestStation.distance <= 120) {
+        statusMessage.textContent = `${nearestStation.name}은 이미 ${nearestClaim.owner}가 점령한 거점이에요.`;
+        rideState.textContent = '점령지 발견';
+      } else if (nearestStation.distance <= 120) {
         statusMessage.textContent = `${nearestStation.name} 근처입니다. 따릉이 인증 가능 구간에 진입했어요.`;
         rideState.textContent = '인증 가능';
       } else if (accuracy > 45) {
@@ -843,9 +960,9 @@
       if (claimLocked && claimedStation) {
         claimLocked = false;
         claimedStation = null;
-        claimLayer.clearLayers();
         app.classList.remove('claim-active');
         setMapInteractionEnabled(true);
+        renderClaimZones();
 
         if (lastLatLng) {
           setStatusForPosition(lastLatLng, lastAccuracy);
@@ -861,21 +978,42 @@
         return;
       }
 
+      if (getClaimInfo(currentNearestStation.id)) {
+        statusMessage.textContent = `${currentNearestStation.name}은 이미 ${getClaimInfo(currentNearestStation.id).owner}가 점령했어요.`;
+        syncActionButtons();
+        return;
+      }
+
+      const ownerName = ensurePlayerName();
+
+      if (!ownerName) {
+        statusMessage.textContent = '점령자를 기록하려면 이름이 필요해요.';
+        syncActionButtons();
+        return;
+      }
+
       claimedStation = currentNearestStation;
+      claimOwners[claimedStation.id] = {
+        owner: ownerName,
+        claimedAt: new Date().toISOString(),
+      };
+      saveClaimOwners();
+      updateClaimCountHud();
       claimLocked = true;
       app.classList.add('claim-active');
       setMapInteractionEnabled(false);
-      renderClaimZone(claimedStation);
+      renderClaimZones();
       map.flyTo(claimedStation.latlng, Math.max(map.getZoom(), 17), {
         animate: true,
         duration: 0.9,
       });
-      rideState.textContent = '점령 모드';
-      stationValue.textContent = `${claimedStation.name} · 점령 완료`;
-      statusMessage.textContent = `${claimedStation.name} 인증 성공! 지도는 잠시 고정되고, 거점은 점령된 상태로 표시됩니다.`;
+      rideState.textContent = '거점 점령';
+      stationValue.textContent = `${claimedStation.name} · ${ownerName} 점령`;
+      statusMessage.textContent = `${claimedStation.name} 점령 성공. 이제 이 구역의 점령자는 ${ownerName}입니다.`;
       syncActionButtons();
     });
 
+    updateClaimCountHud();
     fetchOfficialStations();
     startWatchingLocation();
   </script>
