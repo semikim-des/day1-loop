@@ -95,6 +95,8 @@
         name: '서울광장 대여소',
         lat: 37.5663,
         lng: 126.9779,
+        mapX: 222,
+        mapY: 74,
         bikeType: '일반 따릉이',
         available: 9,
         racks: 17,
@@ -105,6 +107,8 @@
         name: '성수역 대여소',
         lat: 37.5446,
         lng: 127.0557,
+        mapX: 82,
+        mapY: 132,
         bikeType: '새싹 따릉이',
         available: 4,
         racks: 12,
@@ -115,6 +119,8 @@
         name: '여의나루 대여소',
         lat: 37.5271,
         lng: 126.9326,
+        mapX: 154,
+        mapY: 176,
         bikeType: '일반 따릉이',
         available: 13,
         racks: 20,
@@ -129,6 +135,39 @@
       gps: 'GPS 인증',
       receipt: '인증샷 이벤트',
     };
+
+    const INITIAL_COLLECTIBLES = [
+      {
+        id: 'acorn',
+        name: '황금 도토리',
+        reward: '희귀 코스튬 파편',
+        points: 35,
+        energy: 20,
+        mapX: 118,
+        mapY: 92,
+        color: '#f5cb57',
+      },
+      {
+        id: 'gear',
+        name: '네온 기어',
+        reward: '속도 버프 칩',
+        points: 25,
+        energy: 16,
+        mapX: 198,
+        mapY: 148,
+        color: '#7ccaf8',
+      },
+      {
+        id: 'leaf',
+        name: '새싹 배터리',
+        reward: '에너지 충전 팩',
+        points: 20,
+        energy: 28,
+        mapX: 58,
+        mapY: 58,
+        color: '#3fd56e',
+      },
+    ];
 
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
       const R = 6371000;
@@ -192,32 +231,6 @@
       );
     }
 
-    function ProgressBar({ currentStep }) {
-      const currentIndex = STEP_ORDER.indexOf(currentStep);
-
-      return (
-        <div style={styles.progressBar}>
-          {STEP_ORDER.map((step, index) => {
-            const active = index <= currentIndex;
-            return (
-              <div key={step} style={styles.progressItem}>
-                <div
-                  style={{
-                    ...styles.progressDot,
-                    background: active ? '#3fd56e' : '#d1ddcb',
-                    color: active ? '#18271b' : '#6f8573',
-                  }}
-                >
-                  {index + 1}
-                </div>
-                <div style={styles.progressLabel}>{STEP_LABELS[step]}</div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
     function GameApp() {
       const savedProgress = React.useMemo(() => {
         try {
@@ -235,6 +248,12 @@
       const [locationError, setLocationError] = React.useState('');
       const [stationQuery, setStationQuery] = React.useState('');
       const [stationStatus, setStationStatus] = React.useState(() => STATIONS.map((station) => ({ ...station })));
+      const [spritePos, setSpritePos] = React.useState(savedProgress?.spritePos || { x: 36, y: 188 });
+      const [spriteFrame, setSpriteFrame] = React.useState(0);
+      const [collectibles, setCollectibles] = React.useState(
+        savedProgress?.collectibles || INITIAL_COLLECTIBLES.map((item) => ({ ...item, found: false }))
+      );
+      const [inventory, setInventory] = React.useState(savedProgress?.inventory || []);
       const [score, setScore] = React.useState(savedProgress?.score || 0);
       const [energy, setEnergy] = React.useState(savedProgress?.energy || 0);
       const [gpsChecked, setGpsChecked] = React.useState(savedProgress?.gpsChecked || false);
@@ -283,12 +302,21 @@
             nickname,
             score,
             energy,
+            spritePos,
+            collectibles,
+            inventory,
             gpsChecked,
             eventReward,
             activityLog,
           })
         );
-      }, [step, introIndex, nickname, score, energy, gpsChecked, eventReward, activityLog]);
+      }, [step, introIndex, nickname, score, energy, spritePos, collectibles, inventory, gpsChecked, eventReward, activityLog]);
+
+      React.useEffect(() => {
+        if (step !== 'intro' && !nickname.trim()) {
+          setStep('nickname');
+        }
+      }, [step, nickname]);
 
       const stationsWithDistance = stationStatus.map((station) => {
         if (!userLocation) {
@@ -310,9 +338,31 @@
       const filteredStations = stationsWithDistance.filter((station) =>
         station.name.toLowerCase().includes(stationQuery.trim().toLowerCase())
       );
+      const sceneStations = filteredStations.map((station) => ({
+        ...station,
+        spriteDistance: Math.hypot(spritePos.x - station.mapX, spritePos.y - station.mapY),
+      }));
+      const nearestSceneStation = [...sceneStations].sort((a, b) => a.spriteDistance - b.spriteDistance)[0];
+      const canCheckScene = nearestSceneStation?.spriteDistance != null && nearestSceneStation.spriteDistance <= 26;
+      const sceneCollectibles = collectibles.map((item) => ({
+        ...item,
+        spriteDistance: Math.hypot(spritePos.x - item.mapX, spritePos.y - item.mapY),
+      }));
+      const nearestCollectible = [...sceneCollectibles]
+        .filter((item) => !item.found)
+        .sort((a, b) => a.spriteDistance - b.spriteDistance)[0];
+      const canCollectItem = nearestCollectible?.spriteDistance != null && nearestCollectible.spriteDistance <= 24;
 
       const appendLog = (message) => {
         setActivityLog((prev) => [message, ...prev].slice(0, 5));
+      };
+
+      const moveSprite = (dx, dy) => {
+        setSpritePos((prev) => ({
+          x: Math.min(248, Math.max(18, prev.x + dx)),
+          y: Math.min(212, Math.max(22, prev.y + dy)),
+        }));
+        setSpriteFrame((prev) => (prev + 1) % 2);
       };
 
       const handleRefreshStations = () => {
@@ -324,6 +374,22 @@
           })
         );
         appendLog('대여소 실시간 현황을 새로고침했습니다.');
+      };
+
+      const handleCollectItem = () => {
+        if (!canCollectItem) {
+          return;
+        }
+
+        setCollectibles((prev) =>
+          prev.map((item) =>
+            item.id === nearestCollectible.id ? { ...item, found: true } : item
+          )
+        );
+        setInventory((prev) => [...prev, { name: nearestCollectible.name, reward: nearestCollectible.reward }]);
+        setScore((prev) => prev + nearestCollectible.points);
+        setEnergy((prev) => prev + nearestCollectible.energy);
+        appendLog(`${nearestCollectible.name} 채집 성공. ${nearestCollectible.reward}을(를) 획득했습니다.`);
       };
 
       const handleIntroNext = () => {
@@ -347,7 +413,7 @@
       };
 
       const handleGpsCheck = () => {
-        if (!canCheckGps || gpsChecked) {
+        if (!(canCheckGps || canCheckScene) || gpsChecked) {
           return;
         }
 
@@ -355,7 +421,8 @@
         setEnergy((prev) => prev + 60);
         setGpsChecked(true);
         setStep('receipt');
-        appendLog(`${nearestStation.name} 근처 인증 성공. 주행 가점 100점이 반영되었습니다.`);
+        const successStation = canCheckGps ? nearestStation : nearestSceneStation;
+        appendLog(`${successStation.name} 근처 인증 성공. 주행 가점 100점이 반영되었습니다.`);
       };
 
       const handleReceiptUpload = () => {
@@ -375,7 +442,36 @@
         window.location.reload();
       };
 
+      React.useEffect(() => {
+        if (step !== 'gps') {
+          return;
+        }
+
+        const handleKeyDown = (event) => {
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            moveSprite(0, -10);
+          }
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            moveSprite(0, 10);
+          }
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            moveSprite(-10, 0);
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            moveSprite(10, 0);
+          }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [step]);
+
       const introCard = INTRO_STORY[introIndex];
+      const currentStepIndex = STEP_ORDER.indexOf(step);
 
       return (
         <div style={styles.app}>
@@ -385,48 +481,61 @@
                 <div style={styles.eyebrow}>DDARUNGMON</div>
                 <h1 style={styles.title}>에너토피아</h1>
               </div>
+              <div style={styles.headerRight}>
+                <div style={styles.sceneIndicator}>SCENE {currentStepIndex + 1}</div>
               <button style={styles.resetButton} onClick={resetProgress}>
                 리셋
               </button>
+              </div>
             </header>
 
-            <ProgressBar currentStep={step} />
-
-            <section style={styles.heroCard}>
-              <div style={styles.heroVisual}>
-                <PixelBike />
-              </div>
-              <div style={styles.heroText}>
-                <div style={styles.heroName}>{nickname ? `${nickname} 라이더` : '신입 라이더'}</div>
-                <div style={styles.heroStats}>
-                  <span>점수 {score}P</span>
-                  <span>에너지 {energy}EP</span>
-                </div>
-              </div>
-            </section>
-
             {step === 'intro' && (
-              <section style={styles.panel}>
-                <div style={styles.storyTag}>스토리 시작</div>
-                <h2 style={styles.panelTitle}>{introCard.title}</h2>
-                <p style={styles.panelBody}>{introCard.body}</p>
-                <button style={styles.primaryButton} onClick={handleIntroNext}>
-                  {introIndex < INTRO_STORY.length - 1 ? '다음 장면' : '닉네임 설정하러 가기'}
-                </button>
+              <section style={styles.scenePanel}>
+                <div style={styles.storyScene}>
+                  <div style={styles.storyVisual}>
+                    <PixelBike />
+                  </div>
+                  <div style={styles.storyTag}>스토리 시작</div>
+                  <h2 style={styles.sceneTitle}>{introCard.title}</h2>
+                  <p style={styles.sceneBody}>{introCard.body}</p>
+                  <div style={styles.storyPager}>
+                    {INTRO_STORY.map((_, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          ...styles.storyPagerDot,
+                          background: index === introIndex ? '#3fd56e' : '#d1ddcb',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <button style={styles.primaryButton} onClick={handleIntroNext}>
+                    {introIndex < INTRO_STORY.length - 1 ? '다음 장면' : '닉네임 설정하러 가기'}
+                  </button>
+                </div>
               </section>
             )}
 
             {step === 'nickname' && (
-              <section style={styles.panel}>
+              <section style={styles.scenePanel}>
+                <div style={styles.storyScene}>
+                  <div style={styles.storyVisualCompact}>
+                    <PixelBike />
+                  </div>
                 <div style={styles.storyTag}>캐릭터 등록</div>
-                <h2 style={styles.panelTitle}>라이더 닉네임 설정</h2>
-                <p style={styles.panelBody}>
+                <h2 style={styles.sceneTitle}>라이더 닉네임 설정</h2>
+                <p style={styles.sceneBody}>
                   동호회 랭킹과 이벤트 로그에 표시될 이름입니다. 짧고 기억에 남는 이름이 좋습니다.
                 </p>
                 <input
                   type="text"
                   value={nicknameInput}
                   onChange={(event) => setNicknameInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && nicknameInput.trim()) {
+                      handleNicknameSubmit();
+                    }
+                  }}
                   placeholder="예: 성수픽서, 한강왕"
                   style={styles.textInput}
                   maxLength={12}
@@ -441,16 +550,122 @@
                 >
                   닉네임 확정
                 </button>
+                </div>
               </section>
             )}
 
             {step === 'gps' && (
-              <section style={styles.panel}>
+              <section style={styles.scenePanel}>
+                <div style={styles.missionHud}>
+                  <div style={styles.heroName}>{nickname ? `${nickname} 라이더` : '신입 라이더'}</div>
+                  <div style={styles.heroStats}>
+                    <span>점수 {score}P</span>
+                    <span>에너지 {energy}EP</span>
+                  </div>
+                </div>
+                <section style={styles.panel}>
                 <div style={styles.storyTag}>첫 미션</div>
-                <h2 style={styles.panelTitle}>대여소 근처에서 GPS 인증</h2>
+                <h2 style={styles.panelTitle}>돌아다니다가 대여소를 만나면 인증</h2>
                 <p style={styles.panelBody}>
-                  실제 따릉이 대여소 120m 이내에서만 인증 버튼이 활성화됩니다. 자동 적립이 아니라 직접 눌러야 가점이 들어갑니다.
+                  이 씬은 포켓몬고처럼 직접 돌아다니는 단계입니다. 캐릭터를 움직여 대여소에 닿으면 인증할 수 있고, 길가에 숨어 있는 반짝 아이템을 주우면 새로운 보상을 획득합니다.
                 </p>
+
+                <div style={styles.mapSceneCard}>
+                  <div style={styles.mapSceneHeader}>
+                    <span>라이딩 필드</span>
+                    <span>{canCheckScene ? '대여소 접근 완료' : '대여소와 아이템을 찾아 이동'}</span>
+                  </div>
+                  <div style={styles.mapScene}>
+                    {sceneStations.map((station) => (
+                      <div
+                        key={station.id}
+                        style={{
+                          ...styles.mapStation,
+                          left: station.mapX - 14,
+                          top: station.mapY - 14,
+                          background: station.bikeType === '일반 따릉이' ? '#3fd56e' : '#7ccaf8',
+                          boxShadow: station.spriteDistance <= 26 ? '0 0 0 4px rgba(63,213,110,0.25)' : 'none',
+                        }}
+                      >
+                        P
+                      </div>
+                    ))}
+                    {sceneCollectibles.filter((item) => !item.found).map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          ...styles.collectibleNode,
+                          left: item.mapX - 10,
+                          top: item.mapY - 10,
+                          background: item.color,
+                          boxShadow: item.spriteDistance <= 24 ? '0 0 0 4px rgba(245,203,87,0.25)' : 'none',
+                        }}
+                      >
+                        ✦
+                      </div>
+                    ))}
+                    <div style={{ ...styles.mapPath, left: 36, top: 172, width: 188 }} />
+                    <div style={{ ...styles.mapPath, left: 138, top: 88, width: 10, height: 106 }} />
+                    <div style={{ ...styles.mapPath, left: 82, top: 126, width: 74 }} />
+                    <div
+                      style={{
+                        ...styles.mapSprite,
+                        left: spritePos.x - 12,
+                        top: spritePos.y - 18,
+                      }}
+                    >
+                      <div style={styles.mapSpriteBike} />
+                      <div style={styles.mapSpriteHead} />
+                      <div
+                        style={{
+                          ...styles.mapSpriteBody,
+                          transform: spriteFrame === 0 ? 'translateY(0)' : 'translateY(2px)',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={styles.sceneHint}>
+                    방향키 또는 아래 버튼으로 캐릭터를 움직이세요. 대여소 픽셀 옆까지 가면 인증이 열리고, 반짝이는 아이템 옆에 가면 채집이 가능합니다.
+                  </div>
+
+                  <div style={styles.controlPad}>
+                    <button style={styles.controlButton} onClick={() => moveSprite(0, -10)}>▲</button>
+                    <div style={styles.controlPadRow}>
+                      <button style={styles.controlButton} onClick={() => moveSprite(-10, 0)}>◀</button>
+                      <button style={styles.controlButton} onClick={() => moveSprite(10, 0)}>▶</button>
+                    </div>
+                    <button style={styles.controlButton} onClick={() => moveSprite(0, 10)}>▼</button>
+                  </div>
+                </div>
+
+                <div style={styles.overworldInfo}>
+                  <div style={styles.overworldCard}>
+                    <div style={styles.overworldLabel}>대여소 인카운터</div>
+                    <div style={styles.overworldName}>{nearestSceneStation?.name || '탐색 중'}</div>
+                    <div style={styles.overworldMeta}>
+                      {nearestSceneStation ? `캐릭터 거리 ${Math.round(nearestSceneStation.spriteDistance)}px` : '근처 대여소 탐색 중'}
+                    </div>
+                  </div>
+                  <div style={styles.overworldCard}>
+                    <div style={styles.overworldLabel}>깜짝 아이템</div>
+                    <div style={styles.overworldName}>{nearestCollectible?.name || '모든 아이템 수집 완료'}</div>
+                    <div style={styles.overworldMeta}>
+                      {nearestCollectible ? `캐릭터 거리 ${Math.round(nearestCollectible.spriteDistance)}px` : '새로운 드롭 대기 중'}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  style={{
+                    ...styles.collectButton,
+                    opacity: canCollectItem ? 1 : 0.45,
+                  }}
+                  disabled={!canCollectItem}
+                  onClick={handleCollectItem}
+                >
+                  {canCollectItem ? `${nearestCollectible.name} 채집하기` : '아이템 가까이 가면 채집 가능'}
+                </button>
 
                 <div style={styles.mapActions}>
                   <input
@@ -472,11 +687,27 @@
 
                 <div style={styles.statusCard}>
                   <div style={styles.statusTitle}>가장 가까운 대여소</div>
-                  <div style={styles.statusMain}>{nearestStation?.name || '위치 확인 중'}</div>
+                  <div style={styles.statusMain}>{nearestSceneStation?.name || nearestStation?.name || '위치 확인 중'}</div>
                   <div style={styles.statusSub}>
                     {nearestStation?.distance != null
-                      ? `${Math.round(nearestStation.distance)}m 떨어져 있습니다.`
-                      : 'GPS 좌표를 기다리는 중입니다.'}
+                      ? `실제 GPS 기준 ${Math.round(nearestStation.distance)}m`
+                      : canCheckScene
+                        ? '웹 테스트 모드에서 캐릭터가 대여소 근처에 도착했습니다.'
+                        : 'GPS 좌표를 기다리거나 캐릭터를 직접 이동하세요.'}
+                  </div>
+                </div>
+
+                <div style={styles.inventoryPanel}>
+                  <div style={styles.inventoryTitle}>채집 인벤토리</div>
+                  <div style={styles.inventoryList}>
+                    {inventory.length > 0 ? inventory.map((item, index) => (
+                      <div key={`${item.name}-${index}`} style={styles.inventoryItem}>
+                        <strong>{item.name}</strong>
+                        <span>{item.reward}</span>
+                      </div>
+                    )) : (
+                      <div style={styles.inventoryEmpty}>아직 획득한 아이템이 없습니다.</div>
+                    )}
                   </div>
                 </div>
 
@@ -524,19 +755,28 @@
                 <button
                   style={{
                     ...styles.primaryButton,
-                    background: canCheckGps ? '#3fd56e' : '#c2d0be',
-                    color: canCheckGps ? '#18271b' : '#6a7e6f',
+                    background: canCheckGps || canCheckScene ? '#3fd56e' : '#c2d0be',
+                    color: canCheckGps || canCheckScene ? '#18271b' : '#6a7e6f',
                   }}
-                  disabled={!canCheckGps || gpsChecked}
+                  disabled={!(canCheckGps || canCheckScene) || gpsChecked}
                   onClick={handleGpsCheck}
                 >
-                  {gpsChecked ? '인증 완료' : '현 위치 인증하기'}
+                  {gpsChecked ? '인증 완료' : canCheckGps ? '실제 위치 인증하기' : '캐릭터 위치로 인증하기'}
                 </button>
+                </section>
               </section>
             )}
 
             {step === 'receipt' && (
-              <section style={styles.panel}>
+              <section style={styles.scenePanel}>
+                <div style={styles.missionHud}>
+                  <div style={styles.heroName}>{nickname ? `${nickname} 라이더` : '신입 라이더'}</div>
+                  <div style={styles.heroStats}>
+                    <span>점수 {score}P</span>
+                    <span>에너지 {energy}EP</span>
+                  </div>
+                </div>
+                <section style={styles.panel}>
                 <div style={styles.storyTag}>보너스 이벤트</div>
                 <h2 style={styles.panelTitle}>결제 인증샷 등록</h2>
                 <p style={styles.panelBody}>
@@ -573,17 +813,20 @@
                     <div style={styles.eventPoints}>추가 보상 +{eventReward.points}P</div>
                   </div>
                 )}
+                </section>
               </section>
             )}
 
-            <section style={styles.logPanel}>
-              <div style={styles.logTitle}>진행 로그</div>
-              {activityLog.map((entry, index) => (
-                <div key={`${entry}-${index}`} style={styles.logItem}>
-                  {entry}
-                </div>
-              ))}
-            </section>
+            {(step === 'gps' || step === 'receipt') && (
+              <section style={styles.logPanel}>
+                <div style={styles.logTitle}>진행 로그</div>
+                {activityLog.map((entry, index) => (
+                  <div key={`${entry}-${index}`} style={styles.logItem}>
+                    {entry}
+                  </div>
+                ))}
+              </section>
+            )}
           </main>
         </div>
       );
@@ -615,6 +858,15 @@
         fontSize: 28,
         lineHeight: 1.1,
       },
+      headerRight: {
+        display: 'grid',
+        gap: 8,
+        justifyItems: 'end',
+      },
+      sceneIndicator: {
+        fontSize: 10,
+        color: '#426347',
+      },
       resetButton: {
         border: '3px solid #1c2e1f',
         background: '#f9fff4',
@@ -622,52 +874,65 @@
         padding: '10px 12px',
         boxShadow: '4px 4px 0 #1c2e1f',
       },
-      progressBar: {
+      scenePanel: {
+        minHeight: '58vh',
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 8,
+        alignContent: 'start',
         marginBottom: 14,
       },
-      progressItem: {
-        display: 'grid',
-        gap: 6,
-        justifyItems: 'center',
-        textAlign: 'center',
-      },
-      progressDot: {
-        width: 34,
-        height: 34,
+      storyScene: {
+        background: '#f9fff4',
         border: '3px solid #1c2e1f',
+        boxShadow: '4px 4px 0 #1c2e1f',
+        padding: 18,
+      },
+      storyVisual: {
+        minHeight: 150,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 12,
+        background: '#dbead1',
+        border: '2px solid #1c2e1f',
+        marginBottom: 14,
       },
-      progressLabel: {
-        fontSize: 10,
+      storyVisualCompact: {
+        minHeight: 110,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#dbead1',
+        border: '2px solid #1c2e1f',
+        marginBottom: 14,
+      },
+      sceneTitle: {
+        margin: '0 0 12px 0',
+        fontSize: 24,
         lineHeight: 1.3,
+      },
+      sceneBody: {
+        margin: '0 0 18px 0',
+        fontSize: 14,
+        lineHeight: 1.7,
         color: '#426347',
       },
-      heroCard: {
+      storyPager: {
+        display: 'flex',
+        gap: 8,
+        marginBottom: 16,
+      },
+      storyPagerDot: {
+        width: 18,
+        height: 8,
+        border: '2px solid #1c2e1f',
+      },
+      missionHud: {
         display: 'grid',
-        gridTemplateColumns: '120px 1fr',
-        gap: 14,
-        alignItems: 'center',
-        padding: 14,
+        gap: 8,
+        padding: 12,
         background: '#dbead1',
         border: '3px solid #1c2e1f',
         boxShadow: '4px 4px 0 #1c2e1f',
-        marginBottom: 14,
-      },
-      heroVisual: {
-        minHeight: 96,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      heroText: {
-        display: 'grid',
-        gap: 8,
+        marginBottom: 12,
       },
       heroName: {
         fontSize: 18,
@@ -686,6 +951,153 @@
         boxShadow: '4px 4px 0 #1c2e1f',
         padding: 16,
         marginBottom: 14,
+      },
+      mapSceneCard: {
+        border: '3px solid #1c2e1f',
+        background: '#dbead1',
+        padding: 10,
+        marginBottom: 12,
+      },
+      mapSceneHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 8,
+        fontSize: 10,
+        marginBottom: 8,
+        color: '#426347',
+      },
+      mapScene: {
+        position: 'relative',
+        height: 240,
+        border: '3px solid #1c2e1f',
+        background:
+          'linear-gradient(180deg, #eff7ea 0%, #e5f0de 100%)',
+        overflow: 'hidden',
+        marginBottom: 10,
+      },
+      mapPath: {
+        position: 'absolute',
+        height: 12,
+        background: '#a9b9a5',
+        border: '2px solid #1c2e1f',
+      },
+      mapStation: {
+        position: 'absolute',
+        width: 28,
+        height: 28,
+        border: '3px solid #1c2e1f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 12,
+        zIndex: 2,
+      },
+      collectibleNode: {
+        position: 'absolute',
+        width: 20,
+        height: 20,
+        border: '3px solid #1c2e1f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 10,
+        zIndex: 2,
+        animation: 'none',
+      },
+      mapSprite: {
+        position: 'absolute',
+        width: 24,
+        height: 30,
+        zIndex: 3,
+        transition: 'left 0.12s linear, top 0.12s linear',
+      },
+      mapSpriteBike: {
+        position: 'absolute',
+        left: 0,
+        bottom: 0,
+        width: 24,
+        height: 10,
+        background: '#3fd56e',
+        border: '3px solid #1c2e1f',
+      },
+      mapSpriteHead: {
+        position: 'absolute',
+        left: 7,
+        top: 0,
+        width: 10,
+        height: 10,
+        background: '#f3b274',
+        border: '3px solid #1c2e1f',
+      },
+      mapSpriteBody: {
+        position: 'absolute',
+        left: 5,
+        top: 10,
+        width: 14,
+        height: 12,
+        background: '#7ccaf8',
+        border: '3px solid #1c2e1f',
+        transition: 'transform 0.1s linear',
+      },
+      sceneHint: {
+        fontSize: 11,
+        lineHeight: 1.5,
+        color: '#426347',
+        marginBottom: 10,
+      },
+      controlPad: {
+        display: 'grid',
+        justifyItems: 'center',
+        gap: 6,
+      },
+      controlPadRow: {
+        display: 'flex',
+        gap: 6,
+      },
+      controlButton: {
+        width: 58,
+        height: 48,
+        border: '3px solid #1c2e1f',
+        background: '#f9fff4',
+        color: '#18271b',
+        boxShadow: '4px 4px 0 #1c2e1f',
+        fontSize: 18,
+      },
+      overworldInfo: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 8,
+        marginBottom: 10,
+      },
+      overworldCard: {
+        border: '2px solid #1c2e1f',
+        background: '#eef4e8',
+        padding: 10,
+      },
+      overworldLabel: {
+        fontSize: 10,
+        color: '#426347',
+        marginBottom: 6,
+      },
+      overworldName: {
+        fontSize: 13,
+        lineHeight: 1.4,
+        marginBottom: 4,
+      },
+      overworldMeta: {
+        fontSize: 10,
+        color: '#426347',
+        lineHeight: 1.4,
+      },
+      collectButton: {
+        width: '100%',
+        border: '3px solid #1c2e1f',
+        background: '#f5cb57',
+        color: '#18271b',
+        padding: '14px 12px',
+        boxShadow: '4px 4px 0 #1c2e1f',
+        fontSize: 13,
+        marginBottom: 12,
       },
       storyTag: {
         display: 'inline-block',
@@ -778,6 +1190,36 @@
       statusSub: {
         fontSize: 11,
         color: '#426347',
+      },
+      inventoryPanel: {
+        marginBottom: 12,
+        border: '3px solid #1c2e1f',
+        background: '#eef4e8',
+        padding: 10,
+      },
+      inventoryTitle: {
+        fontSize: 12,
+        marginBottom: 8,
+      },
+      inventoryList: {
+        display: 'grid',
+        gap: 8,
+      },
+      inventoryItem: {
+        display: 'grid',
+        gap: 4,
+        border: '2px solid #1c2e1f',
+        background: '#ffffff',
+        padding: 10,
+        fontSize: 11,
+      },
+      inventoryEmpty: {
+        border: '2px dashed #aac0ad',
+        background: '#ffffff',
+        padding: 12,
+        color: '#426347',
+        fontSize: 11,
+        textAlign: 'center',
       },
       stationBoard: {
         marginBottom: 12,
