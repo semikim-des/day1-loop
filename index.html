@@ -1129,6 +1129,22 @@
       statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
     }
 
+    function closeFloatingMenus(options = {}) {
+      const { keepLeaderboard = false, keepProfileMenu = false, keepClaimList = false } = options;
+
+      if (!keepLeaderboard) {
+        leaderboardCard.classList.add('is-hidden');
+      }
+
+      if (!keepProfileMenu) {
+        profileMenu.classList.add('is-hidden');
+      }
+
+      if (!keepClaimList) {
+        claimListCard.classList.add('is-hidden');
+      }
+    }
+
     function cleanStationName(name) {
       return String(name || '')
         .replace(/^\d+\.\s*/, '')
@@ -1546,32 +1562,39 @@
       }
     });
 
-    leaderboardToggleButton.addEventListener('click', () => {
-      leaderboardCard.classList.toggle('is-hidden');
+    leaderboardToggleButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const willOpen = leaderboardCard.classList.contains('is-hidden');
+      closeFloatingMenus({ keepLeaderboard: willOpen });
+      leaderboardCard.classList.toggle('is-hidden', !willOpen);
     });
 
     profileMenuButton.addEventListener('click', (event) => {
       event.stopPropagation();
-      profileMenu.classList.toggle('is-hidden');
+      const willOpen = profileMenu.classList.contains('is-hidden');
+      closeFloatingMenus({ keepProfileMenu: willOpen });
+      profileMenu.classList.toggle('is-hidden', !willOpen);
     });
 
     claimedStationsButton.addEventListener('click', () => {
       renderClaimList();
-      claimListCard.classList.toggle('is-hidden');
-      profileMenu.classList.add('is-hidden');
+      const willOpen = claimListCard.classList.contains('is-hidden');
+      closeFloatingMenus({ keepClaimList: willOpen });
+      claimListCard.classList.toggle('is-hidden', !willOpen);
     });
 
     changeNicknameButton.addEventListener('click', promptNicknameChange);
 
     document.addEventListener('click', (event) => {
-      const clickedInsideProfile =
+      const clickedInsideFloatingUi =
+        leaderboardToggleButton.contains(event.target) ||
+        leaderboardCard.contains(event.target) ||
         profileMenuButton.contains(event.target) ||
         profileMenu.contains(event.target) ||
         claimListCard.contains(event.target);
 
-      if (!clickedInsideProfile) {
-        profileMenu.classList.add('is-hidden');
-        claimListCard.classList.add('is-hidden');
+      if (!clickedInsideFloatingUi) {
+        closeFloatingMenus();
       }
     });
 
