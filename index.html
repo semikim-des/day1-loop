@@ -106,7 +106,7 @@
     .top-overlay {
       top: max(12px, env(safe-area-inset-top));
       left: 12px;
-      width: min(248px, calc(100vw - 24px));
+      width: min(220px, calc(100vw - 108px));
       display: grid;
       gap: 8px;
     }
@@ -172,6 +172,12 @@
       gap: 10px;
     }
 
+    .profile-stack {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+
     .rank-badge {
       width: 52px;
       height: 52px;
@@ -217,6 +223,15 @@
       image-rendering: pixelated;
     }
 
+    .profile-name {
+      max-width: 78px;
+      font-size: 8px;
+      line-height: 1.35;
+      text-align: center;
+      color: var(--text);
+      word-break: keep-all;
+    }
+
     .summary-label {
       font-size: 8px;
       color: var(--text-soft);
@@ -231,6 +246,12 @@
     .summary-sub {
       font-size: 9px;
       color: var(--text-soft);
+    }
+
+    .summary-line {
+      font-size: 9px;
+      color: var(--text-soft);
+      line-height: 1.4;
     }
 
     .hud-title {
@@ -529,6 +550,14 @@
     }
 
     @media (max-width: 480px) {
+      .top-overlay {
+        width: min(192px, calc(100vw - 104px));
+      }
+
+      .top-right-overlay {
+        width: min(92px, calc(100vw - 24px));
+      }
+
       .hud-card {
         grid-template-columns: 1fr;
       }
@@ -548,6 +577,29 @@
       .status-card {
         max-width: min(228px, calc(100vw - 92px));
       }
+
+      .summary-top {
+        gap: 6px;
+      }
+
+      .rank-badge {
+        width: 48px;
+        height: 48px;
+      }
+
+      .profile-button {
+        width: 42px;
+        height: 42px;
+      }
+
+      .profile-button img {
+        width: 24px;
+        height: 24px;
+      }
+
+      .profile-name {
+        max-width: 64px;
+      }
     }
   </style>
 </head>
@@ -566,10 +618,6 @@
 
       <section class="floating-card sub-card">
         <div class="sub-row">
-          <span>현재 라이더</span>
-          <strong id="playerValue">미입장</strong>
-        </div>
-        <div class="sub-row">
           <span>가장 가까운 대여소</span>
           <strong id="stationValue">탐색 중...</strong>
         </div>
@@ -587,12 +635,14 @@
             <div class="rank-badge-icon">♛</div>
             <div class="rank-badge-value" id="myRankValue">-위</div>
           </button>
-          <button class="profile-button" id="editNicknameButton" type="button" aria-label="닉네임 변경">
-            <img src="" id="profileAvatarImage" alt="프로필 아바타">
-          </button>
+          <div class="profile-stack">
+            <button class="profile-button" id="editNicknameButton" type="button" aria-label="닉네임 변경">
+              <img src="" id="profileAvatarImage" alt="프로필 아바타">
+            </button>
+            <div class="profile-name" id="profileNameValue">미입장</div>
+          </div>
         </div>
-        <div class="summary-label">내 기록</div>
-        <div class="summary-sub" id="myScoreValue">0곳 점령</div>
+        <div class="summary-line" id="myRecordLine">내기록 : 0곳 점령</div>
       </section>
 
       <section class="floating-card leaderboard-card action-button is-hidden" id="leaderboardCard">
@@ -712,19 +762,19 @@
 
     const rideState = document.getElementById('rideState');
     const coordValue = document.getElementById('coordValue');
-    const playerValue = document.getElementById('playerValue');
     const stationValue = document.getElementById('stationValue');
     const statusMessage = document.getElementById('statusMessage');
     const nearbyCount = document.getElementById('nearbyCount');
     const authButton = document.getElementById('authButton');
     const locateButton = document.getElementById('locateButton');
     const myRankValue = document.getElementById('myRankValue');
-    const myScoreValue = document.getElementById('myScoreValue');
+    const myRecordLine = document.getElementById('myRecordLine');
     const leaderboardToggleButton = document.getElementById('leaderboardToggleButton');
     const leaderboardCard = document.getElementById('leaderboardCard');
     const leaderboardList = document.getElementById('leaderboardList');
     const editNicknameButton = document.getElementById('editNicknameButton');
     const profileAvatarImage = document.getElementById('profileAvatarImage');
+    const profileNameValue = document.getElementById('profileNameValue');
     const gateOverlay = document.getElementById('gateOverlay');
     const accessCodeInput = document.getElementById('accessCodeInput');
     const accessButton = document.getElementById('accessButton');
@@ -891,9 +941,9 @@
       profileAvatarImage.src = AVATAR_IMAGE;
 
       if (!currentPlayer) {
-        playerValue.textContent = '미입장';
+        profileNameValue.textContent = '미입장';
         myRankValue.textContent = '-위';
-        myScoreValue.textContent = '0곳 점령';
+        myRecordLine.textContent = '내기록 : 0곳 점령';
         return;
       }
 
@@ -901,9 +951,9 @@
       const myRank = leaderboard.findIndex((entry) => entry.code === currentPlayer.code) + 1;
       const record = getPlayerRecord(currentPlayer.code);
 
-      playerValue.textContent = currentPlayer.nickname;
+      profileNameValue.textContent = currentPlayer.nickname;
       myRankValue.textContent = myRank > 0 ? `${myRank}위` : '-위';
-      myScoreValue.textContent = `${record.uniqueStations.length}곳 점령`;
+      myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
     }
 
     function promptNicknameChange() {
