@@ -175,6 +175,7 @@
     .rank-badge {
       width: 52px;
       height: 52px;
+      border: 0;
       border-radius: 999px;
       display: grid;
       place-items: center;
@@ -183,6 +184,7 @@
       box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65);
       color: #8b6200;
       text-align: center;
+      padding: 0;
     }
 
     .rank-badge-icon {
@@ -581,17 +583,16 @@
     <div class="map-overlay top-right-overlay">
       <section class="floating-card summary-card">
         <div class="summary-top">
-          <div class="rank-badge">
+          <button class="rank-badge" id="leaderboardToggleButton" type="button" aria-label="랭킹 보기">
             <div class="rank-badge-icon">♛</div>
             <div class="rank-badge-value" id="myRankValue">-위</div>
-          </div>
+          </button>
           <button class="profile-button" id="editNicknameButton" type="button" aria-label="닉네임 변경">
             <img src="" id="profileAvatarImage" alt="프로필 아바타">
           </button>
         </div>
         <div class="summary-label">내 기록</div>
         <div class="summary-sub" id="myScoreValue">0곳 점령</div>
-        <button class="mini-button" id="leaderboardToggleButton" type="button">랭킹 보기</button>
       </section>
 
       <section class="floating-card leaderboard-card action-button is-hidden" id="leaderboardCard">
