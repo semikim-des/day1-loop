@@ -33,6 +33,7 @@
       --danger: #ff857d;
       --shadow: 0 16px 36px rgba(18, 40, 30, 0.16);
       --blur: blur(18px);
+      --right-safe-gap: max(20px, calc(env(safe-area-inset-right) + 20px));
     }
 
     * {
@@ -113,7 +114,7 @@
 
     .top-right-overlay {
       top: max(12px, env(safe-area-inset-top));
-      right: 12px;
+      right: var(--right-safe-gap);
       width: 112px;
       display: grid;
       gap: 8px;
@@ -121,7 +122,7 @@
 
     .bottom-overlay {
       left: 12px;
-      right: 12px;
+      right: var(--right-safe-gap);
       bottom: max(12px, env(safe-area-inset-bottom));
       display: grid;
       gap: 8px;
@@ -614,10 +615,10 @@
     <div class="map-overlay top-overlay">
       <section class="floating-card hud-card">
         <div>
-          <div class="hud-title">내 GPS 위치</div>
-          <div class="hud-value" id="coordValue">위치 수신 전</div>
+          <div class="hud-title">현재 위치</div>
+          <div class="hud-value" id="coordValue">주변 확인 전</div>
         </div>
-        <div class="hud-chip" id="rideState">GPS 대기</div>
+        <div class="hud-chip" id="rideState">위치 대기</div>
       </section>
 
       <section class="floating-card sub-card">
@@ -753,15 +754,6 @@
         iconSize: [48, 48],
         iconAnchor: [24, 24],
       }),
-    }).addTo(map);
-
-    const accuracyCircle = L.circle(SEOUL_CENTER, {
-      radius: 0,
-      color: '#42d77d',
-      weight: 1,
-      opacity: 0.4,
-      fillColor: '#42d77d',
-      fillOpacity: 0.08,
     }).addTo(map);
 
     const rideState = document.getElementById('rideState');
@@ -955,7 +947,7 @@
       const myRank = leaderboard.findIndex((entry) => entry.code === currentPlayer.code) + 1;
       const record = getPlayerRecord(currentPlayer.code);
 
-      profileNameValue.textContent = currentPlayer.nickname;
+      profileNameValue.textContent = record.nickname;
       myRankValue.textContent = myRank > 0 ? `${myRank}위` : '-위';
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
     }
@@ -980,8 +972,20 @@
       statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
     }
 
-    function formatCoords(latlng) {
-      return `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    function cleanStationName(name) {
+      return String(name || '')
+        .replace(/^\d+\.\s*/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function formatNearbyLabel(station) {
+      if (!station) {
+        return '주변 탐색 중';
+      }
+
+      const cleanedName = cleanStationName(station.name);
+      return cleanedName ? `${cleanedName} 근처` : '주변 탐색 중';
     }
 
     function normalizeStations(realtimeList) {
@@ -1054,20 +1058,39 @@
       syncActionButtons();
 
       try {
-        const response = await fetch(OFFICIAL_STATION_API, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          },
-          body: new URLSearchParams({
-            stationGrpSeq: 'ALL',
-            tabId: '',
-          }).toString(),
-        });
+        let response = null;
+        let lastError = null;
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            response = await fetch(OFFICIAL_STATION_API, {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              },
+              body: new URLSearchParams({
+                stationGrpSeq: 'ALL',
+                tabId: '',
+              }).toString(),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            break;
+          } catch (error) {
+            lastError = error;
+
+            if (attempt === 0) {
+              await new Promise((resolve) => window.setTimeout(resolve, 700));
+            }
+          }
+        }
+
+        if (!response) {
+          throw lastError || new Error('공식 데이터 응답 없음');
         }
 
         const data = await response.json();
@@ -1097,7 +1120,7 @@
           stationLoadState = 'error';
           stationValue.textContent = '공식 데이터 연결 실패';
           nearbyCount.textContent = '0개';
-          statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 환경 또는 네트워크 정책 때문에 차단될 수 있어요.';
+          statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 화면이나 앱 내 웹뷰 정책 때문에 잠시 막힐 수 있어요.';
         }
 
         renderLeaderboard();
@@ -1153,9 +1176,8 @@
     }
 
     function setStatusForPosition(latlng) {
-      coordValue.textContent = formatCoords(latlng);
-
       if (stationLoadState === 'loading') {
+        coordValue.textContent = '주변 대여소 확인 중';
         rideState.textContent = '대여소 동기화중';
         stationValue.textContent = '공식 데이터 불러오는 중...';
         nearbyCount.textContent = '-';
@@ -1164,10 +1186,11 @@
       }
 
       if (stationLoadState === 'error' || !stationData.length) {
-        rideState.textContent = 'GPS 고정';
+        coordValue.textContent = '주변 위치 확인됨';
+        rideState.textContent = '위치 확인됨';
         stationValue.textContent = '공식 데이터 없음';
         nearbyCount.textContent = '0개';
-        statusMessage.textContent = 'GPS는 잡혔지만 공식 따릉이 대여소 데이터를 아직 연결하지 못했습니다.';
+        statusMessage.textContent = '내 위치는 잡혔지만 공식 따릉이 대여소 데이터를 아직 연결하지 못했습니다.';
         return;
       }
 
@@ -1176,6 +1199,7 @@
       renderStationsAround(latlng);
       renderClaimZones();
       currentNearestStation = nearestStation;
+      coordValue.textContent = formatNearbyLabel(nearestStation);
       const owner = getStationOwner(nearestStation.id);
       stationValue.textContent = `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
       nearbyCount.textContent = `${stationsInRange.length}개`;
@@ -1184,14 +1208,14 @@
         const record = getPlayerRecord(currentPlayer.code);
         const alreadyChecked = record.uniqueStations.includes(nearestStation.id);
         statusMessage.textContent = alreadyChecked
-          ? `${nearestStation.name}은 이미 ${currentPlayer.nickname}이 점령한 거점이에요.`
+          ? `${nearestStation.name}은 이미 ${record.nickname}이 점령한 거점이에요.`
           : owner
             ? `${nearestStation.name}은 현재 ${owner}의 땅이에요.`
             : `${nearestStation.name} 근처입니다. 바로 점령할 수 있어요.`;
         rideState.textContent = alreadyChecked ? '내 거점' : owner ? '점령지 발견' : '점령 가능';
       } else {
         statusMessage.textContent = `${Math.round(nearestStation.distance)}m 앞에 ${nearestStation.name}가 있어요. 가까운 대여소만 지도에 표시 중입니다.`;
-        rideState.textContent = 'GPS 고정';
+        rideState.textContent = '위치 이동 중';
       }
 
       syncActionButtons();
@@ -1202,7 +1226,6 @@
       const movedDistance = lastLatLng ? map.distance(lastLatLng, nextLatLng) : Infinity;
 
       avatarMarker.setLatLng(nextLatLng);
-      accuracyCircle.setLatLng(nextLatLng).setRadius(Math.max(accuracy, 10));
       setStatusForPosition(nextLatLng);
 
       if (!hasFirstLock) {
@@ -1223,7 +1246,7 @@
     }
 
     function handleLocationError(message) {
-      rideState.textContent = 'GPS 실패';
+      rideState.textContent = '위치 실패';
       statusMessage.textContent = message;
       currentNearestStation = null;
       syncActionButtons();
@@ -1275,7 +1298,10 @@
     }
 
     locateButton.addEventListener('click', () => {
-      rideState.textContent = 'GPS 요청 중';
+      rideState.textContent = '위치 요청 중';
+      if (stationLoadState !== 'ready') {
+        fetchOfficialStations();
+      }
       startWatchingLocation();
     });
 
@@ -1313,7 +1339,7 @@
       renderLeaderboard();
       updatePlayerHud();
       rideState.textContent = '점령 완료';
-      statusMessage.textContent = `${currentNearestStation.name} 점령 완료. 현재 점령자는 ${currentPlayer.nickname}입니다.`;
+      statusMessage.textContent = `${currentNearestStation.name} 점령 완료. 현재 점령자는 ${getCurrentNickname()}입니다.`;
       syncActionButtons();
     });
 
