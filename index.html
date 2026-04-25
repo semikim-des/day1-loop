@@ -389,6 +389,8 @@
       display: grid;
       gap: 8px;
       padding: 10px 12px;
+      width: min(236px, calc(100vw - 24px - var(--right-safe-gap)));
+      justify-self: end;
     }
 
     .leaderboard-title {
@@ -641,14 +643,14 @@
 
     @media (max-width: 480px) {
       .top-overlay {
-        width: calc(100vw - 24px);
+        width: calc(100vw - 12px - var(--right-safe-gap) - 126px - 10px);
       }
 
       .top-right-overlay {
-        top: calc(max(12px, env(safe-area-inset-top)) + 136px);
-        left: 12px;
-        right: auto;
-        width: calc(100vw - 24px);
+        top: max(12px, env(safe-area-inset-top));
+        left: auto;
+        right: var(--right-safe-gap);
+        width: 126px;
       }
 
       .hud-card {
@@ -661,10 +663,13 @@
 
       .sub-row {
         align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
       }
 
       .sub-row strong {
-        max-width: 52%;
+        max-width: 100%;
+        text-align: left;
       }
 
       .status-card {
@@ -702,7 +707,7 @@
 
       .claim-card {
         top: 108px;
-        width: min(220px, calc(100vw - 24px));
+        width: min(220px, calc(100vw - 24px - var(--right-safe-gap)));
       }
     }
   </style>
