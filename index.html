@@ -67,17 +67,6 @@
       height: 100%;
     }
 
-    #app.claim-active::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      background:
-        radial-gradient(circle at center, rgba(255, 213, 91, 0.16), transparent 34%),
-        linear-gradient(180deg, rgba(28, 46, 31, 0.06), rgba(28, 46, 31, 0.18));
-    }
-
     #map {
       width: 100%;
       height: 100%;
@@ -125,7 +114,9 @@
     .top-right-overlay {
       top: max(12px, env(safe-area-inset-top));
       right: 12px;
-      width: auto;
+      width: min(172px, calc(100vw - 24px));
+      display: grid;
+      gap: 8px;
     }
 
     .bottom-overlay {
@@ -167,23 +158,77 @@
       font-size: 10px;
     }
 
-    .claim-count-card {
+    .summary-card {
       display: grid;
-      gap: 3px;
-      min-width: 84px;
+      gap: 4px;
       padding: 10px 12px;
-      text-align: right;
+      text-align: left;
     }
 
-    .claim-count-label {
+    .summary-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .rank-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #fff4bc, #ffd55b);
+      border: 1px solid rgba(209, 163, 0, 0.28);
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65);
+      color: #8b6200;
+      text-align: center;
+    }
+
+    .rank-badge-icon {
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .rank-badge-value {
+      font-size: 10px;
+      line-height: 1.1;
+    }
+
+    .profile-button {
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .profile-button img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .summary-label {
       font-size: 8px;
       color: var(--text-soft);
     }
 
-    .claim-count-value {
-      font-size: 15px;
-      color: #8b6200;
+    .summary-value {
+      font-size: 14px;
+      color: var(--text);
       line-height: 1.2;
+    }
+
+    .summary-sub {
+      font-size: 9px;
+      color: var(--text-soft);
     }
 
     .hud-title {
@@ -231,6 +276,63 @@
       line-height: 1.55;
     }
 
+    .leaderboard-card {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+
+    .leaderboard-title {
+      font-size: 9px;
+      color: var(--text-soft);
+    }
+
+    .leaderboard-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 18px 28px 1fr auto;
+      gap: 6px;
+      align-items: center;
+      font-size: 9px;
+    }
+
+    .leaderboard-rank {
+      color: var(--text-soft);
+    }
+
+    .leaderboard-name {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .leaderboard-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(23, 49, 38, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      overflow: hidden;
+    }
+
+    .leaderboard-avatar img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .leaderboard-score {
+      color: #8b6200;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -268,13 +370,19 @@
       color: var(--green-deep);
     }
 
-    .action-button.claim {
-      background: rgba(255, 213, 91, 0.26);
-      color: #8b6200;
-    }
-
     .action-button.is-hidden {
       display: none;
+    }
+
+    .mini-button {
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-family: 'DungGeunMo', monospace;
+      font-size: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
     }
 
     .avatar-marker {
@@ -367,14 +475,55 @@
       color: #8b6200;
     }
 
-    .totem-marker {
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      background: radial-gradient(circle, var(--gold) 0%, #fff1bf 50%, rgba(255, 255, 255, 0.6) 100%);
-      border: 2px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 0 10px rgba(255, 213, 91, 0.14);
-      transform: translate(-50%, -50%);
+    .gate-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(18, 40, 30, 0.18);
+      backdrop-filter: blur(8px);
+    }
+
+    .gate-overlay.is-hidden {
+      display: none;
+    }
+
+    .gate-card {
+      width: min(320px, calc(100vw - 32px));
+      display: grid;
+      gap: 10px;
+      padding: 18px 16px;
+      pointer-events: auto;
+    }
+
+    .gate-title {
+      font-size: 14px;
+    }
+
+    .gate-copy,
+    .gate-message {
+      font-size: 9px;
+      line-height: 1.5;
+      color: var(--text-soft);
+    }
+
+    .gate-message {
+      min-height: 14px;
+      color: #a34d46;
+    }
+
+    .code-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 13px;
+      font-family: 'DungGeunMo', monospace;
+      font-size: 11px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.92);
     }
 
     @media (max-width: 480px) {
@@ -415,8 +564,8 @@
 
       <section class="floating-card sub-card">
         <div class="sub-row">
-          <span>GPS 정확도</span>
-          <strong id="gpsMeta">확인 전</strong>
+          <span>현재 라이더</span>
+          <strong id="playerValue">미입장</strong>
         </div>
         <div class="sub-row">
           <span>가장 가까운 대여소</span>
@@ -430,9 +579,34 @@
     </div>
 
     <div class="map-overlay top-right-overlay">
-      <section class="floating-card claim-count-card">
-        <div class="claim-count-label">내 점령 땅</div>
-        <div class="claim-count-value" id="claimCountValue">0개</div>
+      <section class="floating-card summary-card">
+        <div class="summary-top">
+          <div class="rank-badge">
+            <div class="rank-badge-icon">♛</div>
+            <div class="rank-badge-value" id="myRankValue">-위</div>
+          </div>
+          <button class="profile-button" id="editNicknameButton" type="button" aria-label="닉네임 변경">
+            <img src="" id="profileAvatarImage" alt="프로필 아바타">
+          </button>
+        </div>
+        <div class="summary-label">내 기록</div>
+        <div class="summary-sub" id="myScoreValue">0곳 점령</div>
+        <button class="mini-button" id="leaderboardToggleButton" type="button">랭킹 보기</button>
+      </section>
+
+      <section class="floating-card leaderboard-card action-button is-hidden" id="leaderboardCard">
+        <div class="leaderboard-title">전체 랭킹</div>
+        <div class="leaderboard-list" id="leaderboardList"></div>
+      </section>
+    </div>
+
+    <div class="gate-overlay" id="gateOverlay">
+      <section class="floating-card gate-card">
+        <div class="gate-title">라이더 입장</div>
+        <div class="gate-copy">관리자가 미리 발급한 고유번호를 입력하면 지정된 닉네임으로 바로 입장합니다.</div>
+        <input class="code-input" id="accessCodeInput" type="text" placeholder="고유번호 입력">
+        <button class="action-button primary" id="accessButton" type="button">입장하기</button>
+        <div class="gate-message" id="gateMessage">발급받은 고유번호가 있는 라이더만 이용할 수 있어요.</div>
       </section>
     </div>
 
@@ -442,7 +616,7 @@
       </section>
 
       <div class="actions">
-        <button class="action-button claim is-hidden" id="authButton" type="button">대여소 인증하기</button>
+        <button class="action-button primary is-hidden" id="authButton" type="button">대여소 점령하기</button>
         <button class="action-button primary" id="locateButton" type="button">내 위치 리셋</button>
       </div>
     </div>
@@ -459,19 +633,35 @@
     const DISPLAY_RADIUS_METERS = 1800;
     const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
     const OFFICIAL_STATION_API = 'https://www.bikeseoul.com/app/station/getStationRealtimeStatus.do';
+    const STATION_CACHE_KEY = 'ddarungmon-station-cache';
+    const PLAYER_STATS_KEY = 'ddarungmon-player-stats';
+    const PLAYER_SESSION_KEY = 'ddarungmon-player-session';
+    const PRESET_MEMBERS = [
+      { nickname: '테스트 라이더', code: '1111' },
+      { nickname: '잠실스프린터', code: '2222' },
+      { nickname: '강남페달러', code: '3333' },
+      { nickname: '송파부스터', code: '4444' },
+    ];
 
     const AVATAR_IMAGE =
       "data:image/svg+xml;charset=UTF-8," +
       encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
           <rect width="72" height="72" fill="none"/>
-          <circle cx="36" cy="24" r="10" fill="#ffd9b3" stroke="#173126" stroke-width="4"/>
-          <rect x="24" y="34" width="24" height="18" rx="4" fill="#7ccaf8" stroke="#173126" stroke-width="4"/>
-          <rect x="12" y="44" width="48" height="10" rx="4" fill="#42d77d" stroke="#173126" stroke-width="4"/>
-          <circle cx="18" cy="54" r="8" fill="#ffffff" stroke="#173126" stroke-width="4"/>
-          <circle cx="54" cy="54" r="8" fill="#ffffff" stroke="#173126" stroke-width="4"/>
-          <rect x="18" y="8" width="12" height="6" fill="#173126"/>
-          <rect x="42" y="8" width="12" height="6" fill="#173126"/>
+          <circle cx="21" cy="54" r="9" fill="#ffffff" stroke="#173126" stroke-width="4"/>
+          <circle cx="51" cy="54" r="9" fill="#ffffff" stroke="#173126" stroke-width="4"/>
+          <path d="M21 54 L31 40 L43 40 L51 54" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M31 40 L25 31" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <path d="M42 40 L47 33" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <path d="M16 31 L27 31" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <rect x="24" y="14" width="24" height="20" rx="10" fill="#f6f1e7" stroke="#173126" stroke-width="4"/>
+          <circle cx="27" cy="16" r="5" fill="#f6f1e7" stroke="#173126" stroke-width="4"/>
+          <circle cx="45" cy="16" r="5" fill="#f6f1e7" stroke="#173126" stroke-width="4"/>
+          <rect x="28" y="30" width="16" height="12" rx="5" fill="#42d77d" stroke="#173126" stroke-width="4"/>
+          <path d="M33 35 L27 45" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <path d="M40 35 L47 46" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <path d="M31 31 L24 24" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
+          <path d="M41 31 L46 25" fill="none" stroke="#173126" stroke-width="4" stroke-linecap="round"/>
         </svg>
       `);
 
@@ -521,30 +711,37 @@
 
     const rideState = document.getElementById('rideState');
     const coordValue = document.getElementById('coordValue');
+    const playerValue = document.getElementById('playerValue');
     const stationValue = document.getElementById('stationValue');
     const statusMessage = document.getElementById('statusMessage');
-    const gpsMeta = document.getElementById('gpsMeta');
     const nearbyCount = document.getElementById('nearbyCount');
     const authButton = document.getElementById('authButton');
     const locateButton = document.getElementById('locateButton');
-    const claimCountValue = document.getElementById('claimCountValue');
+    const myRankValue = document.getElementById('myRankValue');
+    const myScoreValue = document.getElementById('myScoreValue');
+    const leaderboardToggleButton = document.getElementById('leaderboardToggleButton');
+    const leaderboardCard = document.getElementById('leaderboardCard');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const editNicknameButton = document.getElementById('editNicknameButton');
+    const profileAvatarImage = document.getElementById('profileAvatarImage');
+    const gateOverlay = document.getElementById('gateOverlay');
+    const accessCodeInput = document.getElementById('accessCodeInput');
+    const accessButton = document.getElementById('accessButton');
+    const gateMessage = document.getElementById('gateMessage');
     const app = document.getElementById('app');
 
     let watchId = null;
     let hasFirstLock = false;
     let lastLatLng = null;
-    let lastAccuracy = 20;
     let stationData = [];
     let stationLoadState = 'idle';
     let currentNearestStation = null;
-    let claimLocked = false;
-    let claimedStation = null;
-    let playerName = localStorage.getItem('ddarungmon-player-name') || '';
-    let claimOwners = loadClaimOwners();
+    let currentPlayer = null;
+    let playerStats = loadPlayerStats();
 
-    function loadClaimOwners() {
+    function loadPlayerStats() {
       try {
-        const raw = localStorage.getItem('ddarungmon-claims');
+        const raw = localStorage.getItem(PLAYER_STATS_KEY);
         return raw ? JSON.parse(raw) : {};
       } catch (error) {
         console.error(error);
@@ -552,83 +749,85 @@
       }
     }
 
-    function saveClaimOwners() {
-      localStorage.setItem('ddarungmon-claims', JSON.stringify(claimOwners));
+    function savePlayerStats() {
+      localStorage.setItem(PLAYER_STATS_KEY, JSON.stringify(playerStats));
     }
 
-    function getClaimInfo(stationId) {
-      return claimOwners[stationId] || null;
+    function normalizeCode(value) {
+      return value.trim().toUpperCase();
     }
 
-    function ensurePlayerName() {
-      if (playerName) {
-        return playerName;
+    function findMemberByCode(code) {
+      return PRESET_MEMBERS.find((member) => member.code === normalizeCode(code)) || null;
+    }
+
+    function getPlayerRecord(code) {
+      if (!playerStats[code]) {
+        const member = findMemberByCode(code);
+        playerStats[code] = {
+          code,
+          nickname: member ? member.nickname : '라이더',
+          uniqueStations: [],
+          totalCheckins: 0,
+          lastCheckinAt: null,
+        };
       }
 
-      const nextName = window.prompt('점령자 이름을 입력해주세요.', '라이더')?.trim();
+      return playerStats[code];
+    }
 
-      if (!nextName) {
-        return '';
+    function getCurrentNickname() {
+      return currentPlayer ? getPlayerRecord(currentPlayer.code).nickname : '';
+    }
+
+    function getAvatarTone(code) {
+      const digits = code.replace(/\D/g, '');
+      const seed = Number(digits || '0');
+      const hues = ['#c8f0d8', '#d4ecff', '#ffe3b7', '#f7d6e8'];
+      return hues[seed % hues.length];
+    }
+
+    function loadStationCache() {
+      try {
+        const raw = localStorage.getItem(STATION_CACHE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (error) {
+        console.error(error);
+        return [];
       }
-
-      playerName = nextName;
-      localStorage.setItem('ddarungmon-player-name', playerName);
-      updateClaimCountHud();
-      return playerName;
     }
 
-    function updateClaimCountHud() {
-      const myClaimCount = playerName
-        ? Object.values(claimOwners).filter((claimInfo) => claimInfo.owner === playerName).length
-        : 0;
-
-      claimCountValue.textContent = `${myClaimCount}개`;
+    function saveStationCache(stations) {
+      localStorage.setItem(STATION_CACHE_KEY, JSON.stringify(stations));
     }
 
-    function formatCoords(latlng) {
-      return `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    function setGateVisible(visible) {
+      gateOverlay.classList.toggle('is-hidden', !visible);
     }
 
-    function getNearestItem(items, latlng) {
-      if (!items.length) {
-        return null;
-      }
+    function getLeaderboard() {
+      return PRESET_MEMBERS
+        .map((member) => {
+          const record = getPlayerRecord(member.code);
+          return {
+            code: member.code,
+            nickname: record.nickname,
+            uniqueCount: record.uniqueStations.length,
+            totalCheckins: record.totalCheckins,
+          };
+        })
+        .sort((a, b) => {
+          if (b.uniqueCount !== a.uniqueCount) {
+            return b.uniqueCount - a.uniqueCount;
+          }
 
-      return items
-        .map((item) => ({
-          ...item,
-          distance: map.distance(latlng, item.latlng),
-        }))
-        .sort((a, b) => a.distance - b.distance)[0];
+          return b.totalCheckins - a.totalCheckins;
+        });
     }
 
-    function setMapInteractionEnabled(enabled) {
-      [
-        map.dragging,
-        map.touchZoom,
-        map.doubleClickZoom,
-        map.scrollWheelZoom,
-        map.boxZoom,
-        map.keyboard,
-      ].forEach((handler) => {
-        if (!handler) {
-          return;
-        }
-
-        if (enabled) {
-          handler.enable();
-        } else {
-          handler.disable();
-        }
-      });
-
-      if (map.tap) {
-        if (enabled) {
-          map.tap.enable();
-        } else {
-          map.tap.disable();
-        }
-      }
+    function getStationOwner(stationId) {
+      const owner = PRESET_MEMBERS.find((member) => getPlayerRecord(member.code).uniqueStations.includes(stationId));
+      return owner ? getPlayerRecord(owner.code).nickname : null;
     }
 
     function buildClaimPolygon(latlng, radiusMeters = 92) {
@@ -651,48 +850,140 @@
       claimLayer.clearLayers();
 
       stationData.forEach((station) => {
-        const claimInfo = getClaimInfo(station.id);
+        const owner = getStationOwner(station.id);
 
-        if (!claimInfo) {
+        if (!owner) {
           return;
         }
 
         L.polygon(buildClaimPolygon(station.latlng), {
           color: '#d1a300',
           weight: 2,
-          opacity: 0.96,
+          opacity: 0.9,
           fillColor: '#ffd55b',
-          fillOpacity: 0.22,
-        }).addTo(claimLayer);
-
-        L.circle(station.latlng, {
-          radius: 56,
-          color: '#d1a300',
-          weight: 1,
-          opacity: 0.72,
-          fillColor: '#fff1bf',
-          fillOpacity: 0.28,
+          fillOpacity: 0.18,
         }).addTo(claimLayer);
       });
     }
 
-    function syncActionButtons() {
-      const nearestClaim = currentNearestStation ? getClaimInfo(currentNearestStation.id) : null;
+    function renderLeaderboard() {
+      const leaderboard = getLeaderboard();
 
-      if (claimLocked && claimedStation) {
-        authButton.classList.remove('is-hidden');
-        authButton.textContent = '점령 보기 종료';
+      leaderboardList.innerHTML = leaderboard
+        .slice(0, 8)
+        .map(
+          (entry, index) => `
+            <div class="leaderboard-row">
+              <div class="leaderboard-rank">${index + 1}.</div>
+              <div class="leaderboard-avatar" style="background:${getAvatarTone(entry.code)};">
+                <img src="${AVATAR_IMAGE}" alt="${entry.nickname} 아바타">
+              </div>
+              <div class="leaderboard-name">${entry.nickname}</div>
+              <div class="leaderboard-score">${entry.uniqueCount}곳</div>
+            </div>
+          `
+        )
+        .join('');
+    }
+
+    function updatePlayerHud() {
+      profileAvatarImage.src = AVATAR_IMAGE;
+
+      if (!currentPlayer) {
+        playerValue.textContent = '미입장';
+        myRankValue.textContent = '-위';
+        myScoreValue.textContent = '0곳 점령';
         return;
       }
 
-      if (nearestClaim) {
+      const leaderboard = getLeaderboard();
+      const myRank = leaderboard.findIndex((entry) => entry.code === currentPlayer.code) + 1;
+      const record = getPlayerRecord(currentPlayer.code);
+
+      playerValue.textContent = currentPlayer.nickname;
+      myRankValue.textContent = myRank > 0 ? `${myRank}위` : '-위';
+      myScoreValue.textContent = `${record.uniqueStations.length}곳 점령`;
+    }
+
+    function promptNicknameChange() {
+      if (!currentPlayer) {
+        statusMessage.textContent = '먼저 고유번호로 입장한 뒤 닉네임을 바꿀 수 있어요.';
+        return;
+      }
+
+      const record = getPlayerRecord(currentPlayer.code);
+      const nextNickname = window.prompt('변경할 닉네임을 입력해주세요.', record.nickname)?.trim();
+
+      if (!nextNickname) {
+        return;
+      }
+
+      record.nickname = nextNickname;
+      savePlayerStats();
+      renderLeaderboard();
+      updatePlayerHud();
+      statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
+    }
+
+    function formatCoords(latlng) {
+      return `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    }
+
+    function normalizeStations(realtimeList) {
+      return realtimeList
+        .map((station) => {
+          const lat = Number(station.stationLatitude);
+          const lng = Number(station.stationLongitude);
+          const available =
+            Number(station.parkingBikeTotCnt || 0) +
+            Number(station.parkingQRBikeCnt || 0) +
+            Number(station.parkingELECBikeCnt || 0);
+
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return null;
+          }
+
+          return {
+            id: station.stationId,
+            name: station.stationName,
+            type: station.stationSeCd === 'RAK_001' ? 'regular' : 'sprout',
+            available,
+            latlng: [lat, lng],
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function getNearestItem(items, latlng) {
+      if (!items.length) {
+        return null;
+      }
+
+      return items
+        .map((item) => ({
+          ...item,
+          distance: map.distance(latlng, item.latlng),
+        }))
+        .sort((a, b) => a.distance - b.distance)[0];
+    }
+
+    function syncActionButtons() {
+      if (!currentPlayer || !currentNearestStation) {
         authButton.classList.add('is-hidden');
         return;
       }
 
-      if (currentNearestStation && currentNearestStation.distance <= 120) {
+      if (getStationOwner(currentNearestStation.id)) {
+        authButton.classList.add('is-hidden');
+        return;
+      }
+
+      const record = getPlayerRecord(currentPlayer.code);
+      const alreadyChecked = record.uniqueStations.includes(currentNearestStation.id);
+
+      if (currentNearestStation.distance <= 120 && !alreadyChecked) {
         authButton.classList.remove('is-hidden');
-        authButton.textContent = '대여소 인증하기';
+        authButton.textContent = '대여소 점령하기';
         return;
       }
 
@@ -726,43 +1017,36 @@
 
         const data = await response.json();
         const realtimeList = Array.isArray(data.realtimeList) ? data.realtimeList : [];
-
-        stationData = realtimeList
-          .map((station) => {
-            const lat = Number(station.stationLatitude);
-            const lng = Number(station.stationLongitude);
-            const available =
-              Number(station.parkingBikeTotCnt || 0) +
-              Number(station.parkingQRBikeCnt || 0) +
-              Number(station.parkingELECBikeCnt || 0);
-
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-              return null;
-            }
-
-            return {
-              id: station.stationId,
-              name: station.stationName,
-              type: station.stationSeCd === 'RAK_001' ? 'regular' : 'sprout',
-              available,
-              latlng: [lat, lng],
-            };
-          })
-          .filter(Boolean);
+        stationData = normalizeStations(realtimeList);
+        saveStationCache(stationData);
 
         stationLoadState = 'ready';
         renderClaimZones();
-        updateClaimCountHud();
+        renderLeaderboard();
+        updatePlayerHud();
         syncActionButtons();
       } catch (error) {
-        stationLoadState = 'error';
-        stationData = [];
+        const cachedStations = loadStationCache();
+
+        stationData = Array.isArray(cachedStations) ? cachedStations : [];
         currentNearestStation = null;
         stationLayer.clearLayers();
-        stationValue.textContent = '공식 데이터 연결 실패';
-        nearbyCount.textContent = '0개';
-        statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 환경 또는 네트워크 정책 때문에 차단될 수 있어요.';
-        updateClaimCountHud();
+
+        if (stationData.length) {
+          stationLoadState = 'ready';
+          stationValue.textContent = '캐시된 대여소 사용 중';
+          nearbyCount.textContent = `${stationData.length}개`;
+          statusMessage.textContent = '공식 대여소 실시간 연결이 잠시 끊겨서, 마지막으로 받아둔 대여소 데이터를 보여주고 있어요.';
+          renderClaimZones();
+        } else {
+          stationLoadState = 'error';
+          stationValue.textContent = '공식 데이터 연결 실패';
+          nearbyCount.textContent = '0개';
+          statusMessage.textContent = '공식 따릉이 대여소 데이터를 불러오지 못했습니다. file 환경 또는 네트워크 정책 때문에 차단될 수 있어요.';
+        }
+
+        renderLeaderboard();
+        updatePlayerHud();
         syncActionButtons();
         console.error(error);
       }
@@ -786,16 +1070,16 @@
       const stationsToRender = (visibleStations.length > 0 ? visibleStations : sortedStations.slice(0, 10)).slice(0, 12);
 
       stationsToRender.forEach((station, index) => {
-        const claimInfo = getClaimInfo(station.id);
+        const owner = getStationOwner(station.id);
         const marker = L.marker(station.latlng, {
           icon: L.divIcon({
             className: '',
             html: `
               <div class="station-marker">
                 <div class="station-pin ${station.type}"></div>
-                <div class="station-label ${claimInfo ? 'claimed' : ''}">
+                <div class="station-label ${owner ? 'claimed' : ''}">
                   ${station.name}<br>${Math.round(station.distance)}m · ${station.available}대
-                  ${claimInfo ? `<div class="station-owner">${claimInfo.owner} 점령</div>` : ''}
+                  ${owner ? `<div class="station-owner">${owner} 점령</div>` : ''}
                 </div>
               </div>
             `,
@@ -807,15 +1091,14 @@
 
         marker.bindPopup(
           `${station.name}<br>내 위치에서 ${Math.round(station.distance)}m<br>대여 가능 ${station.available}대` +
-          `${claimInfo ? `<br>점령자 ${claimInfo.owner}` : ''}`
+          `${owner ? `<br>점령자 ${owner}` : ''}`
         );
         marker.addTo(stationLayer);
       });
     }
 
-    function setStatusForPosition(latlng, accuracy) {
+    function setStatusForPosition(latlng) {
       coordValue.textContent = formatCoords(latlng);
-      gpsMeta.textContent = `±${Math.round(accuracy)}m`;
 
       if (stationLoadState === 'loading') {
         rideState.textContent = '대여소 동기화중';
@@ -836,34 +1119,21 @@
       const nearestStation = getNearestItem(stationData, latlng);
       const stationsInRange = stationData.filter((station) => map.distance(latlng, station.latlng) <= DISPLAY_RADIUS_METERS);
       renderStationsAround(latlng);
+      renderClaimZones();
       currentNearestStation = nearestStation;
-      const nearestClaim = getClaimInfo(nearestStation.id);
-
-      if (claimLocked && claimedStation) {
-        const claimInfo = getClaimInfo(claimedStation.id);
-        stationValue.textContent = `${claimedStation.name} · ${claimInfo ? claimInfo.owner : '점령'} 점령`;
-        nearbyCount.textContent = `${stationsInRange.length}개`;
-        statusMessage.textContent = `${claimedStation.name}은 이제 ${claimInfo ? claimInfo.owner : '라이더'}의 땅입니다. 지도는 점령 구역을 보여주기 위해 잠시 고정돼 있어요.`;
-        rideState.textContent = '거점 점령';
-        renderClaimZones();
-        syncActionButtons();
-        return;
-      }
-
-      stationValue.textContent = nearestClaim
-        ? `${nearestStation.name} · ${nearestClaim.owner} 점령`
-        : `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
+      const owner = getStationOwner(nearestStation.id);
+      stationValue.textContent = `${nearestStation.name} · ${Math.round(nearestStation.distance)}m`;
       nearbyCount.textContent = `${stationsInRange.length}개`;
 
-      if (nearestClaim && nearestStation.distance <= 120) {
-        statusMessage.textContent = `${nearestStation.name}은 이미 ${nearestClaim.owner}가 점령한 거점이에요.`;
-        rideState.textContent = '점령지 발견';
-      } else if (nearestStation.distance <= 120) {
-        statusMessage.textContent = `${nearestStation.name} 근처입니다. 따릉이 인증 가능 구간에 진입했어요.`;
-        rideState.textContent = '인증 가능';
-      } else if (accuracy > 45) {
-        statusMessage.textContent = 'GPS 오차가 아직 커요. 잠시 서 있거나 다시 잡기를 눌러 위치를 보정해보세요.';
-        rideState.textContent = 'GPS 보정중';
+      if (nearestStation.distance <= 120 && currentPlayer) {
+        const record = getPlayerRecord(currentPlayer.code);
+        const alreadyChecked = record.uniqueStations.includes(nearestStation.id);
+        statusMessage.textContent = alreadyChecked
+          ? `${nearestStation.name}은 이미 ${currentPlayer.nickname}이 점령한 거점이에요.`
+          : owner
+            ? `${nearestStation.name}은 현재 ${owner}의 땅이에요.`
+            : `${nearestStation.name} 근처입니다. 바로 점령할 수 있어요.`;
+        rideState.textContent = alreadyChecked ? '내 거점' : owner ? '점령지 발견' : '점령 가능';
       } else {
         statusMessage.textContent = `${Math.round(nearestStation.distance)}m 앞에 ${nearestStation.name}가 있어요. 가까운 대여소만 지도에 표시 중입니다.`;
         rideState.textContent = 'GPS 고정';
@@ -878,8 +1148,7 @@
 
       avatarMarker.setLatLng(nextLatLng);
       accuracyCircle.setLatLng(nextLatLng).setRadius(Math.max(accuracy, 10));
-      setStatusForPosition(nextLatLng, accuracy);
-      lastAccuracy = accuracy;
+      setStatusForPosition(nextLatLng);
 
       if (!hasFirstLock) {
         map.flyTo(nextLatLng, 17, {
@@ -887,7 +1156,7 @@
           duration: 1.4,
         });
         hasFirstLock = true;
-      } else if (!claimLocked && (movedDistance >= 4 || accuracy <= 25)) {
+      } else if (movedDistance >= 4 || accuracy <= 25) {
         map.panTo(nextLatLng, {
           animate: true,
           duration: 0.8,
@@ -901,7 +1170,6 @@
     function handleLocationError(message) {
       rideState.textContent = 'GPS 실패';
       statusMessage.textContent = message;
-      gpsMeta.textContent = '위치 권한 확인 필요';
       currentNearestStation = null;
       syncActionButtons();
     }
@@ -957,63 +1225,99 @@
     });
 
     authButton.addEventListener('click', () => {
-      if (claimLocked && claimedStation) {
-        claimLocked = false;
-        claimedStation = null;
-        app.classList.remove('claim-active');
-        setMapInteractionEnabled(true);
-        renderClaimZones();
-
-        if (lastLatLng) {
-          setStatusForPosition(lastLatLng, lastAccuracy);
-        }
-
-        syncActionButtons();
-        return;
-      }
-
       if (!currentNearestStation || currentNearestStation.distance > 120) {
-        statusMessage.textContent = '인증 버튼은 대여소 120m 안에 들어왔을 때만 활성화돼요.';
+        statusMessage.textContent = '점령 버튼은 대여소 120m 안에 들어왔을 때만 활성화돼요.';
         syncActionButtons();
         return;
       }
 
-      if (getClaimInfo(currentNearestStation.id)) {
-        statusMessage.textContent = `${currentNearestStation.name}은 이미 ${getClaimInfo(currentNearestStation.id).owner}가 점령했어요.`;
+      if (!currentPlayer) {
+        statusMessage.textContent = '고유번호를 입력해 라이더로 입장한 뒤 점령할 수 있어요.';
         syncActionButtons();
         return;
       }
 
-      const ownerName = ensurePlayerName();
-
-      if (!ownerName) {
-        statusMessage.textContent = '점령자를 기록하려면 이름이 필요해요.';
+      if (getStationOwner(currentNearestStation.id)) {
+        statusMessage.textContent = `${currentNearestStation.name}은 이미 ${getStationOwner(currentNearestStation.id)}가 점령했어요.`;
         syncActionButtons();
         return;
       }
 
-      claimedStation = currentNearestStation;
-      claimOwners[claimedStation.id] = {
-        owner: ownerName,
-        claimedAt: new Date().toISOString(),
-      };
-      saveClaimOwners();
-      updateClaimCountHud();
-      claimLocked = true;
-      app.classList.add('claim-active');
-      setMapInteractionEnabled(false);
+      const record = getPlayerRecord(currentPlayer.code);
+      if (record.uniqueStations.includes(currentNearestStation.id)) {
+        statusMessage.textContent = `${currentNearestStation.name}은 이미 내가 점령한 대여소예요.`;
+        syncActionButtons();
+        return;
+      }
+
+      record.uniqueStations.push(currentNearestStation.id);
+      record.totalCheckins += 1;
+      record.lastCheckinAt = new Date().toISOString();
+      savePlayerStats();
       renderClaimZones();
-      map.flyTo(claimedStation.latlng, Math.max(map.getZoom(), 17), {
-        animate: true,
-        duration: 0.9,
-      });
-      rideState.textContent = '거점 점령';
-      stationValue.textContent = `${claimedStation.name} · ${ownerName} 점령`;
-      statusMessage.textContent = `${claimedStation.name} 점령 성공. 이제 이 구역의 점령자는 ${ownerName}입니다.`;
+      renderLeaderboard();
+      updatePlayerHud();
+      rideState.textContent = '점령 완료';
+      statusMessage.textContent = `${currentNearestStation.name} 점령 완료. 현재 점령자는 ${currentPlayer.nickname}입니다.`;
       syncActionButtons();
     });
 
-    updateClaimCountHud();
+    function restoreSession() {
+      const storedCode = localStorage.getItem(PLAYER_SESSION_KEY);
+      if (!storedCode) {
+        return;
+      }
+
+      const member = findMemberByCode(storedCode);
+      if (!member) {
+        return;
+      }
+
+      currentPlayer = member;
+      getPlayerRecord(member.code);
+    }
+
+    function attemptAccess() {
+      const member = findMemberByCode(accessCodeInput.value);
+
+      if (!member) {
+        gateMessage.textContent = '등록되지 않은 고유번호예요. 다시 확인해주세요.';
+        return;
+      }
+
+      currentPlayer = member;
+      getPlayerRecord(member.code);
+      savePlayerStats();
+      localStorage.setItem(PLAYER_SESSION_KEY, member.code);
+      gateMessage.textContent = '';
+      accessCodeInput.value = '';
+      setGateVisible(false);
+      renderLeaderboard();
+      updatePlayerHud();
+      syncActionButtons();
+
+      if (lastLatLng) {
+        setStatusForPosition(lastLatLng);
+      }
+    }
+
+    accessButton.addEventListener('click', attemptAccess);
+    accessCodeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        attemptAccess();
+      }
+    });
+
+    leaderboardToggleButton.addEventListener('click', () => {
+      leaderboardCard.classList.toggle('is-hidden');
+    });
+
+    editNicknameButton.addEventListener('click', promptNicknameChange);
+
+    restoreSession();
+    setGateVisible(!currentPlayer);
+    renderLeaderboard();
+    updatePlayerHud();
     fetchOfficialStations();
     startWatchingLocation();
   </script>
