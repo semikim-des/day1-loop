@@ -617,13 +617,22 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 24px;
-      height: 24px;
+      width: 32px;
+      height: 32px;
       transform: translate(-50%, -50%);
       border-radius: 999px;
       background: #fff;
-      border: 4px solid rgba(23, 49, 38, 0.92);
-      box-shadow: inset 0 0 0 2px rgba(66, 215, 125, 0.25);
+      border: 3px solid rgba(23, 49, 38, 0.92);
+      box-shadow: inset 0 0 0 2px rgba(66, 215, 125, 0.18);
+      display: grid;
+      place-items: center;
+    }
+
+    .claim-flag-icon {
+      width: 17px;
+      height: 17px;
+      display: block;
+      color: var(--text);
     }
 
     .claim-orb-label {
@@ -944,8 +953,13 @@
 
       <div class="bottom-center-cluster">
         <button class="claim-orb is-hidden" id="authButton" type="button" aria-label="대여소 점령하기">
-          <span class="claim-orb-core"></span>
-          <span class="claim-orb-label">라이드</span>
+          <span class="claim-orb-core">
+            <svg class="claim-flag-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9 6h7l-2.4 3L16 12H9z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="claim-orb-label">점령</span>
         </button>
       </div>
     </div>
