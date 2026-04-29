@@ -251,6 +251,12 @@
       line-height: 1.4;
     }
 
+    .profile-menu-code {
+      font-size: 8px;
+      color: var(--text-soft);
+      line-height: 1.4;
+    }
+
     .profile-menu-item {
       width: 100%;
       border: 0;
@@ -973,11 +979,12 @@
           <button class="map-icon-button profile-trigger" id="profileMenuButton" type="button" aria-label="프로필 메뉴 열기">
             <img src="" id="profileAvatarImage" alt="프로필 아바타">
           </button>
-          <section class="floating-card profile-menu is-hidden" id="profileMenu">
-            <div class="profile-menu-header">
-              <div class="profile-menu-name" id="profileNameValue">미입장</div>
-              <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
-            </div>
+            <section class="floating-card profile-menu is-hidden" id="profileMenu">
+              <div class="profile-menu-header">
+                <div class="profile-menu-name" id="profileNameValue">미입장</div>
+                <div class="profile-menu-code" id="profileCodeValue">현재 코드 : -</div>
+                <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
+              </div>
             <button class="profile-menu-item primary" id="claimedStationsButton" type="button">내 점령 대여소</button>
             <button class="profile-menu-item" id="changeNicknameButton" type="button">닉네임 변경하기</button>
           </section>
@@ -1114,6 +1121,7 @@
     const claimList = document.getElementById('claimList');
     const profileAvatarImage = document.getElementById('profileAvatarImage');
     const profileNameValue = document.getElementById('profileNameValue');
+    const profileCodeValue = document.getElementById('profileCodeValue');
     const gateOverlay = document.getElementById('gateOverlay');
     const accessCodeInput = document.getElementById('accessCodeInput');
     const accessButton = document.getElementById('accessButton');
@@ -1435,6 +1443,7 @@
 
       if (!currentPlayer) {
         profileNameValue.textContent = '미입장';
+        profileCodeValue.textContent = '현재 코드 : -';
         myRankValue.textContent = '-';
         myRecordLine.textContent = '내기록 : 0곳 점령';
         return;
@@ -1445,6 +1454,7 @@
       const record = getPlayerRecord(currentPlayer.code);
 
       profileNameValue.textContent = record.nickname;
+      profileCodeValue.textContent = `현재 코드 : ${currentPlayer.code}`;
       myRankValue.textContent = myRank > 0 ? `${myRank}` : '-';
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
     }
@@ -1456,19 +1466,39 @@
       }
 
       const record = getPlayerRecord(currentPlayer.code);
+      const previousNickname = record.nickname;
       const nextNickname = window.prompt('변경할 닉네임을 입력해주세요.', record.nickname)?.trim();
 
       if (!nextNickname) {
         return;
       }
 
+      record.nickname = nextNickname;
+      const currentMember = memberDirectory.find((member) => member.code === currentPlayer.code);
+      if (currentMember) {
+        currentMember.nickname = nextNickname;
+      }
+
+      renderLeaderboard();
+      updatePlayerHud();
+      profileMenu.classList.add('is-hidden');
+      statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
+
       if (supabaseClient) {
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
           .from('players')
           .update({ nickname: nextNickname })
-          .eq('code', currentPlayer.code);
+          .eq('code', currentPlayer.code)
+          .select('code, nickname')
+          .maybeSingle();
 
-        if (error) {
+        if (error || !data) {
+          record.nickname = previousNickname;
+          if (currentMember) {
+            currentMember.nickname = previousNickname;
+          }
+          renderLeaderboard();
+          updatePlayerHud();
           console.error(error);
           statusMessage.textContent = '닉네임을 Supabase에 저장하지 못했어요. 잠시 후 다시 시도해주세요.';
           return;
@@ -1477,13 +1507,8 @@
         await loadRemoteGameState();
       } else {
         record.nickname = nextNickname;
+        savePlayerStats();
       }
-
-      savePlayerStats();
-      renderLeaderboard();
-      updatePlayerHud();
-      profileMenu.classList.add('is-hidden');
-      statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
     }
 
     function closeFloatingMenus(options = {}) {
@@ -1939,6 +1964,7 @@
       renderLeaderboard();
       updatePlayerHud();
       syncActionButtons();
+      statusMessage.textContent = `${getCurrentNickname()} (${currentPlayer.code})로 입장했어요.`;
 
       if (lastLatLng) {
         setStatusForPosition(lastLatLng);
