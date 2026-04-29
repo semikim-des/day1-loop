@@ -22,8 +22,8 @@
 
     :root {
       --bg: #f3f7f7;
-      --card: rgba(255, 255, 255, 0.78);
-      --line: rgba(19, 39, 31, 0.18);
+      --card: rgba(255, 255, 255, 0.94);
+      --line: rgba(19, 39, 31, 0.28);
       --text: #173126;
       --text-soft: #557065;
       --green: #42d77d;
@@ -31,7 +31,7 @@
       --blue: #74c8ff;
       --gold: #ffd55b;
       --danger: #ff857d;
-      --shadow: 0 16px 36px rgba(18, 40, 30, 0.16);
+      --shadow: 0 18px 42px rgba(18, 40, 30, 0.2);
       --blur: blur(18px);
       --right-safe-gap: max(20px, calc(env(safe-area-inset-right) + 20px));
     }
@@ -72,6 +72,10 @@
       width: 100%;
       height: 100%;
       z-index: 1;
+    }
+
+    .leaflet-tile-pane {
+      filter: saturate(0.74) brightness(0.95) contrast(1.08);
     }
 
     .leaflet-control-attribution {
@@ -129,7 +133,7 @@
     .floating-card {
       pointer-events: auto;
       background: var(--card);
-      border: 1px solid var(--line);
+      border: 1.5px solid var(--line);
       backdrop-filter: var(--blur);
       border-radius: 18px;
       box-shadow: var(--shadow);
@@ -184,7 +188,12 @@
       color: var(--text);
       text-align: center;
       word-break: keep-all;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(23, 49, 38, 0.08);
+      border-radius: 999px;
+      padding: 4px 8px;
+      box-shadow: 0 8px 18px rgba(18, 40, 30, 0.12);
     }
 
     .rank-badge {
@@ -262,6 +271,10 @@
     }
 
     .profile-menu-badge {
+      justify-self: start;
+    }
+
+    .profile-menu-mission {
       justify-self: start;
     }
 
@@ -406,6 +419,8 @@
       padding: 10px 14px;
       margin: 0 auto;
       border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1.5px solid rgba(23, 49, 38, 0.18);
     }
 
     .status-main {
@@ -503,6 +518,12 @@
       white-space: nowrap;
     }
 
+    .badge-chip.mission {
+      background: rgba(255, 213, 91, 0.2);
+      border-color: rgba(209, 163, 0, 0.28);
+      color: #8b6200;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -540,7 +561,8 @@
       place-items: center;
       position: relative;
       color: var(--text);
-      background: rgba(255, 255, 255, 0.86);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1.5px solid rgba(23, 49, 38, 0.18);
       backdrop-filter: var(--blur);
       box-shadow: var(--shadow);
       pointer-events: auto;
@@ -551,7 +573,7 @@
     .locate-trigger {
       width: 50px;
       height: 50px;
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.96);
     }
 
     .rank-trigger {
@@ -700,10 +722,11 @@
       min-height: 30px;
       padding: 7px 12px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.98);
+      border: 1.5px solid rgba(30, 146, 86, 0.24);
       box-shadow: var(--shadow);
       font-family: 'DungGeunMo', monospace;
-      font-size: 9px;
+      font-size: 10px;
       color: var(--text);
       line-height: 1;
     }
@@ -798,12 +821,13 @@
       max-width: 112px;
       padding: 6px 8px;
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.86);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(23, 49, 38, 0.12);
       backdrop-filter: blur(10px);
       font-size: 9px;
       text-align: center;
       color: var(--text);
-      box-shadow: 0 8px 20px rgba(24, 49, 39, 0.12);
+      box-shadow: 0 10px 24px rgba(24, 49, 39, 0.16);
     }
 
     .station-label.claimed {
@@ -1022,6 +1046,7 @@
               <div class="profile-menu-header">
                 <div class="profile-menu-name" id="profileNameValue">미입장</div>
                 <div class="badge-chip profile-menu-badge" id="profileBadgeValue">따릉이초보</div>
+                <div class="badge-chip mission profile-menu-mission is-hidden" id="profileMissionValue">30분 2연따 성공</div>
                 <div class="profile-menu-code" id="profileCodeValue">현재 코드 : -</div>
                 <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
               </div>
@@ -1071,6 +1096,7 @@
     const STATION_CACHE_KEY = 'ddarungmon-station-cache';
     const PLAYER_STATS_KEY = 'ddarungmon-player-stats';
     const PLAYER_SESSION_KEY = 'ddarungmon-player-session';
+    const RAPID_CLAIM_WINDOW_MS = 30 * 60 * 1000;
     const SUPABASE_URL = window.__SUPABASE_CONFIG__?.url || '';
     const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.anonKey || '';
     const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
@@ -1151,6 +1177,7 @@
     const myRecordLine = document.getElementById('myRecordLine');
     const profileNameMini = document.getElementById('profileNameMini');
     const profileBadgeValue = document.getElementById('profileBadgeValue');
+    const profileMissionValue = document.getElementById('profileMissionValue');
     const leaderboardToggleButton = document.getElementById('leaderboardToggleButton');
     const leaderboardCard = document.getElementById('leaderboardCard');
     const leaderboardList = document.getElementById('leaderboardList');
@@ -1226,6 +1253,7 @@
           uniqueStations: [],
           totalCheckins: 0,
           lastCheckinAt: null,
+          claimHistory: [],
         };
       }
 
@@ -1253,6 +1281,7 @@
           uniqueStations: [],
           totalCheckins: 0,
           lastCheckinAt: null,
+          claimHistory: [],
         };
       });
 
@@ -1264,12 +1293,17 @@
             uniqueStations: [],
             totalCheckins: 0,
             lastCheckinAt: null,
+            claimHistory: [],
           };
         }
 
         nextStats[claim.owner_code].uniqueStations.push(claim.station_id);
         nextStats[claim.owner_code].totalCheckins += 1;
         nextStats[claim.owner_code].lastCheckinAt = claim.claimed_at;
+        nextStats[claim.owner_code].claimHistory.push({
+          stationId: claim.station_id,
+          claimedAt: claim.claimed_at,
+        });
       });
 
       playerStats = nextStats;
@@ -1356,6 +1390,40 @@
       return badges[Math.min(tier, badges.length - 1)] || '따릉이신';
     }
 
+    function hasRapidTwoStationMission(record) {
+      const history = Array.isArray(record.claimHistory) ? [...record.claimHistory] : [];
+      if (history.length < 2) {
+        return false;
+      }
+
+      const sorted = history
+        .map((entry) => ({
+          stationId: entry.stationId,
+          claimedAtMs: new Date(entry.claimedAt).getTime(),
+        }))
+        .filter((entry) => entry.stationId && Number.isFinite(entry.claimedAtMs))
+        .sort((a, b) => a.claimedAtMs - b.claimedAtMs);
+
+      for (let startIndex = 0; startIndex < sorted.length; startIndex += 1) {
+        const start = sorted[startIndex];
+        const uniqueStations = new Set([start.stationId]);
+
+        for (let cursor = startIndex + 1; cursor < sorted.length; cursor += 1) {
+          const target = sorted[cursor];
+          if (target.claimedAtMs - start.claimedAtMs > RAPID_CLAIM_WINDOW_MS) {
+            break;
+          }
+
+          uniqueStations.add(target.stationId);
+          if (uniqueStations.size >= 2) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
     function loadStationCache() {
       try {
         const raw = localStorage.getItem(STATION_CACHE_KEY);
@@ -1384,6 +1452,7 @@
             uniqueCount: record.uniqueStations.length,
             totalCheckins: record.totalCheckins,
             badgeLabel: getBadgeByClaimCount(record.uniqueStations.length),
+            missionLabel: hasRapidTwoStationMission(record) ? '30분 2연따 성공' : '',
           };
         })
         .sort((a, b) => {
@@ -1450,6 +1519,7 @@
               <div class="leaderboard-meta">
                 <div class="leaderboard-name">${entry.nickname}</div>
                 <div class="badge-chip leaderboard-badge">${entry.badgeLabel}</div>
+                ${entry.missionLabel ? `<div class="badge-chip mission leaderboard-badge">${entry.missionLabel}</div>` : ''}
               </div>
               <div class="leaderboard-score">${entry.uniqueCount}곳</div>
             </div>
@@ -1508,6 +1578,7 @@
         profileNameValue.textContent = '미입장';
         profileNameMini.textContent = '미입장';
         profileBadgeValue.textContent = '따릉이초보';
+        profileMissionValue.classList.add('is-hidden');
         profileCodeValue.textContent = '현재 코드 : -';
         myRankValue.textContent = '-';
         myRecordLine.textContent = '내기록 : 0곳 점령';
@@ -1518,10 +1589,12 @@
       const myRank = leaderboard.findIndex((entry) => entry.code === currentPlayer.code) + 1;
       const record = getPlayerRecord(currentPlayer.code);
       const badgeLabel = getBadgeByClaimCount(record.uniqueStations.length);
+      const missionAchieved = hasRapidTwoStationMission(record);
 
       profileNameValue.textContent = record.nickname;
       profileNameMini.textContent = record.nickname;
       profileBadgeValue.textContent = badgeLabel;
+      profileMissionValue.classList.toggle('is-hidden', !missionAchieved);
       profileCodeValue.textContent = `현재 코드 : ${currentPlayer.code}`;
       myRankValue.textContent = myRank > 0 ? `${myRank}` : '-';
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령 · ${badgeLabel}`;
@@ -1949,6 +2022,29 @@
       if (stationLoadState !== 'ready') {
         fetchOfficialStations();
       }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            updatePlayer(
+              position.coords.latitude,
+              position.coords.longitude,
+              position.coords.accuracy || 20
+            );
+            map.flyTo([position.coords.latitude, position.coords.longitude], 17, {
+              animate: true,
+              duration: 0.9,
+            });
+          },
+          () => {},
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      }
+
       startWatchingLocation();
     });
 
@@ -2005,13 +2101,22 @@
         record.uniqueStations.push(currentNearestStation.id);
         record.totalCheckins += 1;
         record.lastCheckinAt = new Date().toISOString();
+        record.claimHistory = Array.isArray(record.claimHistory) ? record.claimHistory : [];
+        record.claimHistory.push({
+          stationId: currentNearestStation.id,
+          claimedAt: record.lastCheckinAt,
+        });
       }
       savePlayerStats();
       renderClaimZones();
       renderLeaderboard();
       updatePlayerHud();
       rideState.textContent = '점령 완료';
-      statusMessage.textContent = `${currentNearestStation.name} 점령 완료. 현재 점령자는 ${getCurrentNickname()}입니다.`;
+      const refreshedRecord = getPlayerRecord(currentPlayer.code);
+      const missionMessage = hasRapidTwoStationMission(refreshedRecord)
+        ? ' 30분 안에 2곳 점령해서 보너스 배지를 획득했어요.'
+        : '';
+      statusMessage.textContent = `${currentNearestStation.name} 점령 완료. 현재 점령자는 ${getCurrentNickname()}입니다.${missionMessage}`;
       syncActionButtons();
     });
 
