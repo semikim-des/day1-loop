@@ -795,6 +795,8 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
   <script>
     const SEOUL_CENTER = [37.5665, 126.9780];
     const DEFAULT_ZOOM = 16;
@@ -804,6 +806,9 @@
     const STATION_CACHE_KEY = 'ddarungmon-station-cache';
     const PLAYER_STATS_KEY = 'ddarungmon-player-stats';
     const PLAYER_SESSION_KEY = 'ddarungmon-player-session';
+    const SUPABASE_URL = window.__SUPABASE_CONFIG__?.url || '';
+    const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.anonKey || '';
+    const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
     const PRESET_MEMBERS = [
       { nickname: '테스트 라이더', code: '1111' },
       { nickname: '잠실스프린터', code: '2222' },
@@ -903,8 +908,17 @@
     let currentNearestStation = null;
     let currentPlayer = null;
     let playerStats = loadPlayerStats();
+    let supabaseClient = null;
+
+    if (hasSupabaseConfig && window.supabase?.createClient) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
     function loadPlayerStats() {
+      if (supabaseClient) {
+        return {};
+      }
+
       try {
         const raw = localStorage.getItem(PLAYER_STATS_KEY);
         return raw ? JSON.parse(raw) : {};
@@ -915,6 +929,10 @@
     }
 
     function savePlayerStats() {
+      if (supabaseClient) {
+        return;
+      }
+
       localStorage.setItem(PLAYER_STATS_KEY, JSON.stringify(playerStats));
     }
 
@@ -1607,6 +1625,11 @@
     setGateVisible(!currentPlayer);
     renderLeaderboard();
     updatePlayerHud();
+
+    if (!hasSupabaseConfig) {
+      statusMessage.textContent = 'Supabase anon key를 supabase-config.js에 넣으면 공용 저장 연결을 시작할 수 있어요.';
+    }
+
     fetchOfficialStations();
     startWatchingLocation();
   </script>
