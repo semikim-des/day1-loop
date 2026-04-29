@@ -523,10 +523,19 @@
       image-rendering: pixelated;
     }
 
-    .icon-glyph {
-      font-size: 24px;
-      line-height: 1;
-      transform: translateY(-1px);
+    .icon-svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+      color: var(--text);
+    }
+
+    .icon-svg * {
+      vector-effect: non-scaling-stroke;
+    }
+
+    .rank-trigger .icon-svg {
+      color: #8b6200;
     }
 
     .icon-badge {
@@ -844,7 +853,14 @@
 
     <div class="map-overlay top-overlay">
       <button class="map-icon-button station-trigger" id="stationInfoButton" type="button" aria-label="가까운 대여소 보기">
-        <span class="icon-glyph">🚲</span>
+        <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="7" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/>
+          <circle cx="17" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/>
+          <path d="M7 17l4-7h3l3 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11 10L9 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M14 10l2-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M5 7h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
       </button>
 
       <section class="floating-card station-panel is-hidden" id="stationInfoCard">
@@ -864,7 +880,14 @@
 
     <div class="map-overlay top-right-overlay">
       <button class="map-icon-button locate-trigger" id="locateButton" type="button" aria-label="내 위치 다시 찾기">
-        <span class="icon-glyph">⌖</span>
+        <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="2.4" fill="currentColor"/>
+          <circle cx="12" cy="12" r="5.4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M12 17v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M3 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M17 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
       </button>
     </div>
 
@@ -885,7 +908,13 @@
 
       <div class="bottom-left-cluster">
         <button class="map-icon-button rank-trigger" id="leaderboardToggleButton" type="button" aria-label="랭킹 보기">
-          <span class="icon-glyph">♛</span>
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 18h14l-1.2-7-3.1 2.5L12 8l-2.7 5.5L6.2 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M7 20h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="6" cy="8" r="1.1" fill="currentColor"/>
+            <circle cx="12" cy="6" r="1.1" fill="currentColor"/>
+            <circle cx="18" cy="8" r="1.1" fill="currentColor"/>
+          </svg>
           <span class="icon-badge" id="myRankValue">-</span>
         </button>
 
@@ -916,7 +945,7 @@
       <div class="bottom-center-cluster">
         <button class="claim-orb is-hidden" id="authButton" type="button" aria-label="대여소 점령하기">
           <span class="claim-orb-core"></span>
-          <span class="claim-orb-label">점령</span>
+          <span class="claim-orb-label">라이드</span>
         </button>
       </div>
     </div>
