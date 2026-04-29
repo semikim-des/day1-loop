@@ -105,28 +105,25 @@
     }
 
     .top-overlay {
-      top: max(12px, env(safe-area-inset-top));
-      left: 12px;
-      width: clamp(350px, calc(100vw - 168px), 760px);
+      top: max(24px, calc(env(safe-area-inset-top) + 12px));
+      left: 20px;
+      width: auto;
       display: grid;
-      gap: 8px;
+      gap: 12px;
+      justify-items: start;
     }
 
     .top-right-overlay {
-      top: max(12px, env(safe-area-inset-top));
+      top: max(24px, calc(env(safe-area-inset-top) + 12px));
       right: var(--right-safe-gap);
-      width: 112px;
-      display: grid;
-      gap: 8px;
+      width: auto;
     }
 
     .bottom-overlay {
-      left: 12px;
+      left: 20px;
       right: var(--right-safe-gap);
-      bottom: max(12px, env(safe-area-inset-bottom));
-      display: grid;
-      gap: 8px;
-      align-items: start;
+      bottom: max(24px, calc(env(safe-area-inset-bottom) + 10px));
+      min-height: 164px;
     }
 
     .floating-card {
@@ -225,24 +222,33 @@
       image-rendering: pixelated;
     }
 
-    .profile-name {
-      max-width: 78px;
-      font-size: 8px;
-      line-height: 1.35;
-      text-align: center;
-      color: var(--text);
-      word-break: keep-all;
-    }
-
     .profile-menu {
       position: absolute;
-      top: 54px;
-      right: 0;
-      width: 148px;
+      left: 0;
+      bottom: calc(100% + 12px);
+      width: 176px;
       display: grid;
       gap: 4px;
-      padding: 6px;
+      padding: 8px;
       z-index: 30;
+    }
+
+    .profile-menu-header {
+      display: grid;
+      gap: 4px;
+      padding: 4px 4px 8px;
+    }
+
+    .profile-menu-name {
+      font-size: 9px;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .profile-menu-record {
+      font-size: 8px;
+      color: var(--text-soft);
+      line-height: 1.4;
     }
 
     .profile-menu-item {
@@ -264,9 +270,9 @@
 
     .claim-card {
       position: absolute;
-      top: 112px;
-      right: 0;
-      width: min(236px, calc(100vw - var(--right-safe-gap) - 24px));
+      left: 0;
+      bottom: calc(100% + 12px);
+      width: min(236px, calc(100vw - var(--right-safe-gap) - 40px));
       display: grid;
       gap: 8px;
       padding: 10px 12px;
@@ -376,21 +382,26 @@
     .status-card {
       display: grid;
       gap: 6px;
-      max-width: min(280px, calc(100vw - 96px));
-      padding: 10px 12px;
+      max-width: min(320px, calc(100vw - 120px));
+      padding: 10px 14px;
+      margin: 0 auto;
+      border-radius: 999px;
     }
 
     .status-main {
-      font-size: 10px;
-      line-height: 1.55;
+      font-size: 9px;
+      line-height: 1.5;
+      text-align: center;
     }
 
     .leaderboard-card {
       display: grid;
       gap: 8px;
       padding: 10px 12px;
-      width: min(236px, calc(100vw - 24px - var(--right-safe-gap)));
-      justify-self: end;
+      width: min(236px, calc(100vw - 40px - var(--right-safe-gap)));
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 12px);
     }
 
     .leaderboard-title {
@@ -454,31 +465,170 @@
       color: var(--text-soft);
     }
 
-    .actions {
+    .bottom-left-cluster {
       position: absolute;
-      right: 0;
+      left: 0;
       bottom: 0;
       display: grid;
-      gap: 8px;
-      justify-items: end;
+      gap: 12px;
+      justify-items: start;
       pointer-events: auto;
     }
 
-    .action-button {
+    .bottom-center-cluster {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      pointer-events: auto;
+    }
+
+    .map-icon-button {
+      width: 56px;
+      height: 56px;
       border: 0;
-      border-radius: 16px;
-      padding: 10px 12px;
-      font-family: 'DungGeunMo', monospace;
-      font-size: 9px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      position: relative;
       color: var(--text);
       background: rgba(255, 255, 255, 0.86);
       backdrop-filter: var(--blur);
       box-shadow: var(--shadow);
+      pointer-events: auto;
+      font-family: 'DungGeunMo', monospace;
     }
 
-    .action-button.primary {
-      background: rgba(66, 215, 125, 0.22);
+    .station-trigger,
+    .locate-trigger {
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .rank-trigger {
+      background: linear-gradient(180deg, #fff4bc, #ffd55b);
+      border: 1px solid rgba(209, 163, 0, 0.28);
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), var(--shadow);
+    }
+
+    .profile-trigger {
+      overflow: hidden;
+    }
+
+    .profile-trigger img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .icon-glyph {
+      font-size: 24px;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+
+    .icon-badge {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 6px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(23, 49, 38, 0.92);
+      color: #fff;
+      font-size: 8px;
+      box-shadow: 0 6px 12px rgba(18, 40, 30, 0.22);
+    }
+
+    .panel-title {
+      font-size: 9px;
+      color: var(--text-soft);
+    }
+
+    .panel-value {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .panel-subrow {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      font-size: 8px;
+      color: var(--text-soft);
+    }
+
+    .panel-subrow strong {
+      max-width: 58%;
+      text-align: right;
+      font-size: 9px;
+      color: var(--text);
+    }
+
+    .panel-chip {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(66, 215, 125, 0.18);
       color: var(--green-deep);
+      font-size: 9px;
+    }
+
+    .station-panel {
+      width: min(252px, calc(100vw - 40px - var(--right-safe-gap)));
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+
+    .claim-orb {
+      width: 88px;
+      height: 88px;
+      border: 0;
+      border-radius: 999px;
+      position: relative;
+      background: radial-gradient(circle at 50% 34%, #ffffff 0 45%, #f6fbfb 46% 54%, #42d77d 55% 100%);
+      box-shadow: 0 18px 30px rgba(18, 40, 30, 0.22);
+      pointer-events: auto;
+    }
+
+    .claim-orb-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: #fff;
+      border: 4px solid rgba(23, 49, 38, 0.92);
+      box-shadow: inset 0 0 0 2px rgba(66, 215, 125, 0.25);
+    }
+
+    .claim-orb-label {
+      position: absolute;
+      left: 50%;
+      bottom: 11px;
+      transform: translateX(-50%);
+      font-family: 'DungGeunMo', monospace;
+      font-size: 9px;
+      color: var(--text);
+    }
+
+    .profile-name {
+      display: none;
     }
 
     .is-hidden {
@@ -643,71 +793,47 @@
 
     @media (max-width: 480px) {
       .top-overlay {
-        width: calc(100vw - 12px - var(--right-safe-gap) - 126px - 10px);
+        left: 20px;
       }
 
       .top-right-overlay {
-        top: max(12px, env(safe-area-inset-top));
-        left: auto;
         right: var(--right-safe-gap);
-        width: 126px;
       }
 
-      .hud-card {
-        grid-template-columns: 1fr;
+      .station-panel {
+        width: min(220px, calc(100vw - 40px - var(--right-safe-gap)));
       }
 
-      .hud-chip {
-        justify-self: start;
-      }
-
-      .sub-row {
+      .panel-subrow {
         align-items: flex-start;
         flex-direction: column;
         gap: 4px;
       }
 
-      .sub-row strong {
+      .panel-subrow strong {
         max-width: 100%;
         text-align: left;
       }
 
       .status-card {
-        max-width: min(228px, calc(100vw - 92px));
+        max-width: min(240px, calc(100vw - 96px));
       }
 
-      .summary-top {
-        justify-content: flex-start;
-        gap: 10px;
-      }
-
-      .rank-badge {
-        width: 48px;
-        height: 48px;
-      }
-
-      .profile-button {
-        width: 42px;
-        height: 42px;
-      }
-
-      .profile-button img {
-        width: 24px;
-        height: 24px;
-      }
-
-      .profile-name {
-        max-width: 64px;
+      .leaderboard-card {
+        width: min(220px, calc(100vw - 40px - var(--right-safe-gap)));
       }
 
       .profile-menu {
-        right: 0;
-        width: 140px;
+        width: 156px;
       }
 
       .claim-card {
-        top: 108px;
-        width: min(220px, calc(100vw - 24px - var(--right-safe-gap)));
+        width: min(220px, calc(100vw - 40px - var(--right-safe-gap)));
+      }
+
+      .claim-orb {
+        width: 82px;
+        height: 82px;
       }
     }
   </style>
@@ -717,55 +843,29 @@
     <div id="map"></div>
 
     <div class="map-overlay top-overlay">
-      <section class="floating-card hud-card">
-        <div>
-          <div class="hud-title">현재 위치</div>
-          <div class="hud-value" id="coordValue">주변 확인 전</div>
-        </div>
-        <div class="hud-chip" id="rideState">위치 대기</div>
-      </section>
+      <button class="map-icon-button station-trigger" id="stationInfoButton" type="button" aria-label="가까운 대여소 보기">
+        <span class="icon-glyph">🚲</span>
+      </button>
 
-      <section class="floating-card sub-card">
-        <div class="sub-row">
-          <span>가장 가까운 대여소</span>
-          <strong id="stationValue">탐색 중...</strong>
+      <section class="floating-card station-panel is-hidden" id="stationInfoCard">
+        <div class="panel-title">가까운 대여소</div>
+        <div class="panel-value" id="stationValue">탐색 중...</div>
+        <div class="panel-subrow">
+          <span>현재 위치</span>
+          <strong id="coordValue">주변 확인 전</strong>
         </div>
-        <div class="sub-row">
+        <div class="panel-subrow">
           <span>근처 대여소 수</span>
           <strong id="nearbyCount">0개</strong>
         </div>
+        <div class="panel-chip" id="rideState">위치 대기</div>
       </section>
     </div>
 
     <div class="map-overlay top-right-overlay">
-      <section class="floating-card summary-card">
-        <div class="summary-top">
-          <button class="rank-badge" id="leaderboardToggleButton" type="button" aria-label="랭킹 보기">
-            <div class="rank-badge-icon">♛</div>
-            <div class="rank-badge-value" id="myRankValue">-위</div>
-          </button>
-          <div class="profile-stack">
-            <button class="profile-button" id="profileMenuButton" type="button" aria-label="프로필 메뉴 열기">
-              <img src="" id="profileAvatarImage" alt="프로필 아바타">
-            </button>
-            <div class="profile-name" id="profileNameValue">미입장</div>
-            <section class="floating-card profile-menu is-hidden" id="profileMenu">
-              <button class="profile-menu-item primary" id="claimedStationsButton" type="button">내 점령 대여소</button>
-              <button class="profile-menu-item" id="changeNicknameButton" type="button">닉네임 변경하기</button>
-            </section>
-            <section class="floating-card claim-card is-hidden" id="claimListCard">
-              <div class="claim-card-title" id="claimListTitle">내 점령 대여소 0곳</div>
-              <div class="claim-list" id="claimList"></div>
-            </section>
-          </div>
-        </div>
-        <div class="summary-line" id="myRecordLine">내기록 : 0곳 점령</div>
-      </section>
-
-      <section class="floating-card leaderboard-card action-button is-hidden" id="leaderboardCard">
-        <div class="leaderboard-title">전체 랭킹</div>
-        <div class="leaderboard-list" id="leaderboardList"></div>
-      </section>
+      <button class="map-icon-button locate-trigger" id="locateButton" type="button" aria-label="내 위치 다시 찾기">
+        <span class="icon-glyph">⌖</span>
+      </button>
     </div>
 
     <div class="gate-overlay" id="gateOverlay">
@@ -783,9 +883,41 @@
         <div class="status-main" id="statusMessage">따릉이 대여소 탐색 중...</div>
       </section>
 
-      <div class="actions">
-        <button class="action-button primary is-hidden" id="authButton" type="button">대여소 점령하기</button>
-        <button class="action-button primary" id="locateButton" type="button">내 위치 리셋</button>
+      <div class="bottom-left-cluster">
+        <button class="map-icon-button rank-trigger" id="leaderboardToggleButton" type="button" aria-label="랭킹 보기">
+          <span class="icon-glyph">♛</span>
+          <span class="icon-badge" id="myRankValue">-</span>
+        </button>
+
+        <div class="profile-stack">
+          <button class="map-icon-button profile-trigger" id="profileMenuButton" type="button" aria-label="프로필 메뉴 열기">
+            <img src="" id="profileAvatarImage" alt="프로필 아바타">
+          </button>
+          <section class="floating-card profile-menu is-hidden" id="profileMenu">
+            <div class="profile-menu-header">
+              <div class="profile-menu-name" id="profileNameValue">미입장</div>
+              <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
+            </div>
+            <button class="profile-menu-item primary" id="claimedStationsButton" type="button">내 점령 대여소</button>
+            <button class="profile-menu-item" id="changeNicknameButton" type="button">닉네임 변경하기</button>
+          </section>
+          <section class="floating-card claim-card is-hidden" id="claimListCard">
+            <div class="claim-card-title" id="claimListTitle">내 점령 대여소 0곳</div>
+            <div class="claim-list" id="claimList"></div>
+          </section>
+        </div>
+
+        <section class="floating-card leaderboard-card action-button is-hidden" id="leaderboardCard">
+          <div class="leaderboard-title">전체 랭킹</div>
+          <div class="leaderboard-list" id="leaderboardList"></div>
+        </section>
+      </div>
+
+      <div class="bottom-center-cluster">
+        <button class="claim-orb is-hidden" id="authButton" type="button" aria-label="대여소 점령하기">
+          <span class="claim-orb-core"></span>
+          <span class="claim-orb-label">점령</span>
+        </button>
       </div>
     </div>
   </div>
@@ -878,6 +1010,8 @@
     const stationValue = document.getElementById('stationValue');
     const statusMessage = document.getElementById('statusMessage');
     const nearbyCount = document.getElementById('nearbyCount');
+    const stationInfoButton = document.getElementById('stationInfoButton');
+    const stationInfoCard = document.getElementById('stationInfoCard');
     const authButton = document.getElementById('authButton');
     const locateButton = document.getElementById('locateButton');
     const myRankValue = document.getElementById('myRankValue');
@@ -1215,7 +1349,7 @@
 
       if (!currentPlayer) {
         profileNameValue.textContent = '미입장';
-        myRankValue.textContent = '-위';
+        myRankValue.textContent = '-';
         myRecordLine.textContent = '내기록 : 0곳 점령';
         return;
       }
@@ -1225,7 +1359,7 @@
       const record = getPlayerRecord(currentPlayer.code);
 
       profileNameValue.textContent = record.nickname;
-      myRankValue.textContent = myRank > 0 ? `${myRank}위` : '-위';
+      myRankValue.textContent = myRank > 0 ? `${myRank}` : '-';
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
     }
 
@@ -1267,7 +1401,16 @@
     }
 
     function closeFloatingMenus(options = {}) {
-      const { keepLeaderboard = false, keepProfileMenu = false, keepClaimList = false } = options;
+      const {
+        keepStationInfo = false,
+        keepLeaderboard = false,
+        keepProfileMenu = false,
+        keepClaimList = false,
+      } = options;
+
+      if (!keepStationInfo) {
+        stationInfoCard.classList.add('is-hidden');
+      }
 
       if (!keepLeaderboard) {
         leaderboardCard.classList.add('is-hidden');
@@ -1352,7 +1495,6 @@
 
       if (currentNearestStation.distance <= 120 && !alreadyChecked) {
         authButton.classList.remove('is-hidden');
-        authButton.textContent = '대여소 점령하기';
         return;
       }
 
@@ -1607,6 +1749,13 @@
       );
     }
 
+    stationInfoButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const willOpen = stationInfoCard.classList.contains('is-hidden');
+      closeFloatingMenus({ keepStationInfo: willOpen });
+      stationInfoCard.classList.toggle('is-hidden', !willOpen);
+    });
+
     locateButton.addEventListener('click', () => {
       rideState.textContent = '위치 요청 중';
       if (stationLoadState !== 'ready') {
@@ -1755,6 +1904,8 @@
 
     document.addEventListener('click', (event) => {
       const clickedInsideFloatingUi =
+        stationInfoButton.contains(event.target) ||
+        stationInfoCard.contains(event.target) ||
         leaderboardToggleButton.contains(event.target) ||
         leaderboardCard.contains(event.target) ||
         profileMenuButton.contains(event.target) ||
