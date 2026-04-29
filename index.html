@@ -809,7 +809,7 @@
     const SUPABASE_URL = window.__SUPABASE_CONFIG__?.url || '';
     const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.anonKey || '';
     const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-    const PRESET_MEMBERS = [
+    const DEFAULT_PRESET_MEMBERS = [
       { nickname: '테스트 라이더', code: '1111' },
       { nickname: '잠실스프린터', code: '2222' },
       { nickname: '강남페달러', code: '3333' },
@@ -907,12 +907,15 @@
     let stationLoadState = 'idle';
     let currentNearestStation = null;
     let currentPlayer = null;
-    let playerStats = loadPlayerStats();
     let supabaseClient = null;
+    let realtimeChannel = null;
+    let memberDirectory = [...DEFAULT_PRESET_MEMBERS];
 
     if (hasSupabaseConfig && window.supabase?.createClient) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
+
+    let playerStats = loadPlayerStats();
 
     function loadPlayerStats() {
       if (supabaseClient) {
@@ -941,7 +944,7 @@
     }
 
     function findMemberByCode(code) {
-      return PRESET_MEMBERS.find((member) => member.code === normalizeCode(code)) || null;
+      return memberDirectory.find((member) => member.code === normalizeCode(code)) || null;
     }
 
     function getPlayerRecord(code) {
@@ -961,6 +964,101 @@
 
     function getCurrentNickname() {
       return currentPlayer ? getPlayerRecord(currentPlayer.code).nickname : '';
+    }
+
+    function buildPlayerStatsFromRows(players, claims) {
+      const nextMembers = (players || []).map((player) => ({
+        code: player.code,
+        nickname: player.nickname,
+        avatar: player.avatar || null,
+      }));
+
+      memberDirectory = nextMembers.length ? nextMembers : [...DEFAULT_PRESET_MEMBERS];
+
+      const nextStats = {};
+      memberDirectory.forEach((member) => {
+        nextStats[member.code] = {
+          code: member.code,
+          nickname: member.nickname,
+          uniqueStations: [],
+          totalCheckins: 0,
+          lastCheckinAt: null,
+        };
+      });
+
+      (claims || []).forEach((claim) => {
+        if (!nextStats[claim.owner_code]) {
+          nextStats[claim.owner_code] = {
+            code: claim.owner_code,
+            nickname: claim.owner_code,
+            uniqueStations: [],
+            totalCheckins: 0,
+            lastCheckinAt: null,
+          };
+        }
+
+        nextStats[claim.owner_code].uniqueStations.push(claim.station_id);
+        nextStats[claim.owner_code].totalCheckins += 1;
+        nextStats[claim.owner_code].lastCheckinAt = claim.claimed_at;
+      });
+
+      playerStats = nextStats;
+
+      if (currentPlayer) {
+        const refreshedPlayer = findMemberByCode(currentPlayer.code);
+        if (refreshedPlayer) {
+          currentPlayer = refreshedPlayer;
+        }
+      }
+    }
+
+    function refreshUiFromState() {
+      renderClaimZones();
+      renderLeaderboard();
+      updatePlayerHud();
+      syncActionButtons();
+
+      if (lastLatLng) {
+        setStatusForPosition(lastLatLng);
+      }
+    }
+
+    async function loadRemoteGameState() {
+      if (!supabaseClient) {
+        return false;
+      }
+
+      const [{ data: players, error: playersError }, { data: claims, error: claimsError }] =
+        await Promise.all([
+          supabaseClient.from('players').select('code, nickname, avatar, created_at').order('created_at', { ascending: true }),
+          supabaseClient.from('claims').select('station_id, station_name, owner_code, claimed_at').order('claimed_at', { ascending: true }),
+        ]);
+
+      if (playersError || claimsError) {
+        console.error(playersError || claimsError);
+        statusMessage.textContent = 'Supabase 공용 저장을 읽지 못해 로컬 화면 상태로 머물러 있어요.';
+        return false;
+      }
+
+      buildPlayerStatsFromRows(players, claims);
+      refreshUiFromState();
+      return true;
+    }
+
+    function subscribeRemoteGameState() {
+      if (!supabaseClient || realtimeChannel) {
+        return;
+      }
+
+      realtimeChannel = supabaseClient
+        .channel('ddarungmon-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+          loadRemoteGameState();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, () => {
+          loadRemoteGameState();
+        })
+        .subscribe();
     }
 
     function getAvatarTone(code) {
@@ -989,7 +1087,7 @@
     }
 
     function getLeaderboard() {
-      return PRESET_MEMBERS
+      return memberDirectory
         .map((member) => {
           const record = getPlayerRecord(member.code);
           return {
@@ -1009,7 +1107,7 @@
     }
 
     function getStationOwner(stationId) {
-      const owner = PRESET_MEMBERS.find((member) => getPlayerRecord(member.code).uniqueStations.includes(stationId));
+      const owner = memberDirectory.find((member) => getPlayerRecord(member.code).uniqueStations.includes(stationId));
       return owner ? getPlayerRecord(owner.code).nickname : null;
     }
 
@@ -1131,7 +1229,7 @@
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
     }
 
-    function promptNicknameChange() {
+    async function promptNicknameChange() {
       if (!currentPlayer) {
         statusMessage.textContent = '먼저 고유번호로 입장한 뒤 닉네임을 바꿀 수 있어요.';
         return;
@@ -1144,7 +1242,23 @@
         return;
       }
 
-      record.nickname = nextNickname;
+      if (supabaseClient) {
+        const { error } = await supabaseClient
+          .from('players')
+          .update({ nickname: nextNickname })
+          .eq('code', currentPlayer.code);
+
+        if (error) {
+          console.error(error);
+          statusMessage.textContent = '닉네임을 Supabase에 저장하지 못했어요. 잠시 후 다시 시도해주세요.';
+          return;
+        }
+
+        await loadRemoteGameState();
+      } else {
+        record.nickname = nextNickname;
+      }
+
       savePlayerStats();
       renderLeaderboard();
       updatePlayerHud();
@@ -1501,7 +1615,7 @@
       startWatchingLocation();
     });
 
-    authButton.addEventListener('click', () => {
+    authButton.addEventListener('click', async () => {
       if (!currentNearestStation || currentNearestStation.distance > 120) {
         statusMessage.textContent = '점령 버튼은 대여소 120m 안에 들어왔을 때만 활성화돼요.';
         syncActionButtons();
@@ -1527,9 +1641,34 @@
         return;
       }
 
-      record.uniqueStations.push(currentNearestStation.id);
-      record.totalCheckins += 1;
-      record.lastCheckinAt = new Date().toISOString();
+      if (supabaseClient) {
+        const { error } = await supabaseClient.from('claims').insert({
+          station_id: currentNearestStation.id,
+          station_name: currentNearestStation.name,
+          lat: currentNearestStation.latlng[0],
+          lng: currentNearestStation.latlng[1],
+          owner_code: currentPlayer.code,
+        });
+
+        if (error) {
+          console.error(error);
+          statusMessage.textContent =
+            error.code === '23505'
+              ? `${currentNearestStation.name}은 방금 다른 라이더가 먼저 점령했어요.`
+              : '점령 내용을 Supabase에 저장하지 못했어요. 잠시 후 다시 시도해주세요.';
+          await loadRemoteGameState();
+          syncActionButtons();
+          return;
+        }
+
+        await loadRemoteGameState();
+      }
+
+      if (!supabaseClient) {
+        record.uniqueStations.push(currentNearestStation.id);
+        record.totalCheckins += 1;
+        record.lastCheckinAt = new Date().toISOString();
+      }
       savePlayerStats();
       renderClaimZones();
       renderLeaderboard();
@@ -1554,7 +1693,11 @@
       getPlayerRecord(member.code);
     }
 
-    function attemptAccess() {
+    async function attemptAccess() {
+      if (supabaseClient && !memberDirectory.length) {
+        await loadRemoteGameState();
+      }
+
       const member = findMemberByCode(accessCodeInput.value);
 
       if (!member) {
@@ -1578,7 +1721,9 @@
       }
     }
 
-    accessButton.addEventListener('click', attemptAccess);
+    accessButton.addEventListener('click', () => {
+      attemptAccess();
+    });
     accessCodeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         attemptAccess();
@@ -1621,17 +1766,28 @@
       }
     });
 
-    restoreSession();
-    setGateVisible(!currentPlayer);
-    renderLeaderboard();
-    updatePlayerHud();
+    async function initializeApp() {
+      restoreSession();
+      setGateVisible(!currentPlayer);
+      renderLeaderboard();
+      updatePlayerHud();
+
+      if (hasSupabaseConfig) {
+        statusMessage.textContent = 'Supabase 공용 저장소와 동기화하는 중입니다.';
+        await loadRemoteGameState();
+        subscribeRemoteGameState();
+      } else {
+        statusMessage.textContent = 'Supabase anon key를 supabase-config.js에 넣으면 공용 저장 연결을 시작할 수 있어요.';
+      }
+
+      fetchOfficialStations();
+      startWatchingLocation();
+    }
 
     if (!hasSupabaseConfig) {
       statusMessage.textContent = 'Supabase anon key를 supabase-config.js에 넣으면 공용 저장 연결을 시작할 수 있어요.';
     }
-
-    fetchOfficialStations();
-    startWatchingLocation();
+    initializeApp();
   </script>
 </body>
 </html>
