@@ -177,6 +177,16 @@
       position: relative;
     }
 
+    .profile-name {
+      max-width: 88px;
+      font-size: 8px;
+      line-height: 1.35;
+      color: var(--text);
+      text-align: center;
+      word-break: keep-all;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
     .rank-badge {
       width: 52px;
       height: 52px;
@@ -249,6 +259,10 @@
       font-size: 8px;
       color: var(--text-soft);
       line-height: 1.4;
+    }
+
+    .profile-menu-badge {
+      justify-self: start;
     }
 
     .profile-menu-code {
@@ -425,7 +439,7 @@
 
     .leaderboard-row {
       display: grid;
-      grid-template-columns: 18px 28px 1fr auto;
+      grid-template-columns: 18px 28px minmax(0, 1fr) auto;
       gap: 6px;
       align-items: center;
       font-size: 9px;
@@ -435,11 +449,21 @@
       color: var(--text-soft);
     }
 
+    .leaderboard-meta {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
     .leaderboard-name {
       color: var(--text);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .leaderboard-badge {
+      justify-self: start;
     }
 
     .leaderboard-avatar {
@@ -462,6 +486,21 @@
 
     .leaderboard-score {
       color: #8b6200;
+    }
+
+    .badge-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(66, 215, 125, 0.14);
+      border: 1px solid rgba(66, 215, 125, 0.2);
+      font-size: 7px;
+      line-height: 1.1;
+      color: var(--green-deep);
+      white-space: nowrap;
     }
 
     .pill {
@@ -667,10 +706,6 @@
       font-size: 9px;
       color: var(--text);
       line-height: 1;
-    }
-
-    .profile-name {
-      display: none;
     }
 
     .is-hidden {
@@ -982,9 +1017,11 @@
           <button class="map-icon-button profile-trigger" id="profileMenuButton" type="button" aria-label="프로필 메뉴 열기">
             <img src="" id="profileAvatarImage" alt="프로필 아바타">
           </button>
+          <div class="profile-name" id="profileNameMini">미입장</div>
             <section class="floating-card profile-menu is-hidden" id="profileMenu">
               <div class="profile-menu-header">
                 <div class="profile-menu-name" id="profileNameValue">미입장</div>
+                <div class="badge-chip profile-menu-badge" id="profileBadgeValue">따릉이초보</div>
                 <div class="profile-menu-code" id="profileCodeValue">현재 코드 : -</div>
                 <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
               </div>
@@ -1112,6 +1149,8 @@
     const locateButton = document.getElementById('locateButton');
     const myRankValue = document.getElementById('myRankValue');
     const myRecordLine = document.getElementById('myRecordLine');
+    const profileNameMini = document.getElementById('profileNameMini');
+    const profileBadgeValue = document.getElementById('profileBadgeValue');
     const leaderboardToggleButton = document.getElementById('leaderboardToggleButton');
     const leaderboardCard = document.getElementById('leaderboardCard');
     const leaderboardList = document.getElementById('leaderboardList');
@@ -1299,6 +1338,24 @@
       return hues[seed % hues.length];
     }
 
+    function getBadgeByClaimCount(count) {
+      const tier = Math.max(0, Math.floor(count / 10));
+      const badges = [
+        '따릉이초보',
+        '동네페달전문가',
+        '한강길좀앎',
+        '출퇴근인간따릉이',
+        '브레이크없는승부사',
+        '안장에영혼묶임',
+        '체인먹는전설',
+        '대여소지박령',
+        '페달과혼연일체',
+        '서울도로내집',
+      ];
+
+      return badges[Math.min(tier, badges.length - 1)] || '따릉이신';
+    }
+
     function loadStationCache() {
       try {
         const raw = localStorage.getItem(STATION_CACHE_KEY);
@@ -1326,6 +1383,7 @@
             nickname: record.nickname,
             uniqueCount: record.uniqueStations.length,
             totalCheckins: record.totalCheckins,
+            badgeLabel: getBadgeByClaimCount(record.uniqueStations.length),
           };
         })
         .sort((a, b) => {
@@ -1389,7 +1447,10 @@
               <div class="leaderboard-avatar" style="background:${getAvatarTone(entry.code)};">
                 <img src="${AVATAR_IMAGE}" alt="${entry.nickname} 아바타">
               </div>
-              <div class="leaderboard-name">${entry.nickname}</div>
+              <div class="leaderboard-meta">
+                <div class="leaderboard-name">${entry.nickname}</div>
+                <div class="badge-chip leaderboard-badge">${entry.badgeLabel}</div>
+              </div>
               <div class="leaderboard-score">${entry.uniqueCount}곳</div>
             </div>
           `
@@ -1445,6 +1506,8 @@
 
       if (!currentPlayer) {
         profileNameValue.textContent = '미입장';
+        profileNameMini.textContent = '미입장';
+        profileBadgeValue.textContent = '따릉이초보';
         profileCodeValue.textContent = '현재 코드 : -';
         myRankValue.textContent = '-';
         myRecordLine.textContent = '내기록 : 0곳 점령';
@@ -1454,11 +1517,14 @@
       const leaderboard = getLeaderboard();
       const myRank = leaderboard.findIndex((entry) => entry.code === currentPlayer.code) + 1;
       const record = getPlayerRecord(currentPlayer.code);
+      const badgeLabel = getBadgeByClaimCount(record.uniqueStations.length);
 
       profileNameValue.textContent = record.nickname;
+      profileNameMini.textContent = record.nickname;
+      profileBadgeValue.textContent = badgeLabel;
       profileCodeValue.textContent = `현재 코드 : ${currentPlayer.code}`;
       myRankValue.textContent = myRank > 0 ? `${myRank}` : '-';
-      myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령`;
+      myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령 · ${badgeLabel}`;
     }
 
     async function promptNicknameChange() {
@@ -1871,6 +1937,15 @@
 
     locateButton.addEventListener('click', () => {
       rideState.textContent = '위치 요청 중';
+      hasFirstLock = false;
+
+      if (lastLatLng) {
+        map.flyTo(lastLatLng, 17, {
+          animate: true,
+          duration: 0.9,
+        });
+      }
+
       if (stationLoadState !== 'ready') {
         fetchOfficialStations();
       }
