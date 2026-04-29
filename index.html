@@ -418,6 +418,9 @@
     .leaderboard-list {
       display: grid;
       gap: 6px;
+      max-height: min(360px, 52vh);
+      overflow: auto;
+      padding-right: 2px;
     }
 
     .leaderboard-row {
@@ -1379,7 +1382,6 @@
       const leaderboard = getLeaderboard();
 
       leaderboardList.innerHTML = leaderboard
-        .slice(0, 8)
         .map(
           (entry, index) => `
             <div class="leaderboard-row">
