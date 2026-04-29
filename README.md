@@ -1,276 +1,109 @@
-# 따릉몬: 강남 에디션 🚴‍♂️🎮
+# 따릉이 게임
 
-위치 기반 인증과 GBA 스타일 배틀을 결합한 따릉이 공유자전거 게임입니다. 강남 지역의 3개 거점을 방문하여 배지를 획득하세요!
+서울 따릉이 대여소를 기반으로 대여소를 점령하고 랭킹을 겨루는 모바일 지도 게임입니다. 실제 GPS 위치, 공식 따릉이 대여소 데이터, Supabase 공용 저장소를 사용합니다.
 
-## 🎯 주요 기능
+## 현재 기능
 
-- **실시간 GPS 위치 추적**: Geolocation API를 통한 정확한 위치 감지
-- **Haversine 거리 계산**: 사용자와 거점 간의 정확한 거리 계산
-- **근처 감지 시스템**: 50m 이내 접근 시 자동 배틀 모드 전환
-- **정확한 GBA 배틀 UI**: 포켓몬 게임보이 어드밴스 스타일의 진정한 배틀 화면
-  - 우측 상단: 상대 포켓몬 (HP 바, 이름, 레벨)
-  - 좌측 하단: 플레이어 포켓몬 (HP 바, 이름, 레벨)
-  - 중앙 하단: 텍스트 윈도우 (배틀 로그)
-  - 하단: 액션 버튼 (공격, 도망, 백팩, 저장)
-- **배지 획득 시스템**: 배틀 승리 시 배지 자동 획득
-- **Google Sheets 연동**: 배지 정보 자동 저장
-- **로컬 캐시**: 오프라인 상황에서도 배지 정보 유지
-- **완벽한 모바일 반응형**: PC/태블릿/모바일 모두 최적화
+- 실제 GPS 기반 현재 위치 추적
+- 공식 따릉이 대여소 데이터 표시
+- 120m 안에서 대여소 점령
+- 점령된 대여소의 소유자 표시
+- 점령 수 기준 전체 랭킹
+- 고유번호 기반 라이더 입장
+- 닉네임 변경
+- Supabase `players`, `claims` 테이블 기반 공용 저장
+- GitHub Pages 배포용 정적 사이트 구성
 
-## 📍 거점 정보
+## 파일 구조
 
-| 거점명 | 좌표 | 관장 | 보상 배지 |
-|--------|------|------|---------|
-| **센터필드 본부** | 37.5038, 127.0428 | 신입 트레이너 | 센터필드 배지 |
-| **강남역 챌린지** | 37.4979, 127.0276 | 강남역 관장 | 도시의 열정 배지 |
-| **선릉 산책길** | 37.5051, 127.0480 | 선릉 수호자 | 푸른 숲 배지 |
+- [index.html](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/index.html): 메인 앱
+- [supabase-config.js](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/supabase-config.js): 브라우저 공개용 Supabase 설정
+- [supabase-config.example.js](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/supabase-config.example.js): 설정 예시
+- [.github/workflows/deploy-pages.yml](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/.github/workflows/deploy-pages.yml): GitHub Pages 배포 워크플로우
+- [GITHUB_DEPLOY.md](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/GITHUB_DEPLOY.md): 배포 확인 가이드
 
-## 🚀 빠른 시작
+## 실행 방식
 
-### 1️⃣ 파일 실행
-`index.html` 파일을 웹 브라우저에서 열면 바로 사용 가능합니다.
+### 1. 로컬 확인
 
-```bash
-# 로컬 서버로 실행 (HTTPS 필수)
-python3 -m http.server 8000
+`file://`로도 화면은 열리지만 아래 항목은 불안정할 수 있습니다.
 
-# 또는 Node.js 사용
-npx http-server
+- GPS 권한
+- Supabase 연결
+- 공식 따릉이 데이터 fetch
+
+가능하면 `localhost`나 GitHub Pages 같은 `https://` 환경에서 테스트하는 것을 권장합니다.
+
+### 2. GitHub Pages 배포
+
+이 저장소는 GitHub Actions로 정적 배포되도록 설정되어 있습니다. `main` 브랜치에 push되면 Pages 배포 워크플로우가 실행됩니다.
+
+예상 배포 주소:
+
+```txt
+https://semikim-des.github.io/day1-loop/
 ```
 
-**⚠️ 중요**: GPS 위치 추적을 위해 **HTTPS 연결**이 필수입니다.
-- 로컬 테스트: `localhost`는 HTTP에서도 작동
-- 배포: 반드시 HTTPS 사용
+처음 한 번은 저장소의 `Settings > Pages`에서 `Build and deployment`가 `GitHub Actions`로 잡혀 있는지 확인하면 안전합니다.
 
-### 2️⃣ Google Sheets API 설정 (선택 사항)
+## Supabase 연결
 
-배지 정보를 Google Sheets에 자동 저장하려면:
+현재 프로젝트는 아래 설정을 사용합니다.
 
-#### Step 1: Google Cloud Console 설정
-1. [Google Cloud Console](https://console.cloud.google.com) 접속
-2. 새 프로젝트 생성
-3. 좌측 메뉴 > API 및 서비스 > 라이브러리 검색
-4. "Google Sheets API" 검색 후 활성화
-5. 좌측 메뉴 > API 및 서비스 > 사용자 인증 정보
-6. "사용자 인증 정보 만들기" > API 키 선택
-7. 생성된 **API 키** 복사
+- `SUPABASE_URL`: `https://eylirebdjrhnvvhrnhug.supabase.co`
+- `SUPABASE_ANON_KEY`: [supabase-config.js](/Users/semi_home/Documents/Claude/Projects/따릉이%20포켓몬고/supabase-config.js)에 저장
 
-#### Step 2: Google Sheets 준비
-1. [Google Sheets](https://sheets.google.com) 접속
-2. 새 스프레드시트 생성
-3. 1행에 다음 헤더 추가:
-   ```
-   플레이어명 | 배지명 | 획득여부 | 획득시간
-   ```
-4. 스프레드시트 URL에서 **스프레드시트 ID** 복사
-   - 예: `https://docs.google.com/spreadsheets/d/[ID]/edit`에서 `[ID]` 부분
+`anon public` 키는 브라우저 공개용 키라 GitHub Pages에도 포함할 수 있습니다. `service_role` 키는 절대 넣으면 안 됩니다.
 
-#### Step 3: 앱에 설정 입력
-1. 앱 상단의 ⚙️ **설정** 버튼 클릭
-2. **API 키** 입력 (Step 1에서 복사한 키)
-3. **스프레드시트 ID** 입력 (Step 2에서 복사한 ID)
-4. **저장** 클릭
+## Supabase 테이블
 
-✅ 이제 배틀 승리 시 Google Sheets에 자동으로 데이터가 저장됩니다!
+### players
 
-## 🎮 게임 플레이
+- `code` text primary key
+- `nickname` text not null
+- `avatar` text
+- `created_at` timestamptz default now()
 
-### 🗺️ 맵 뷰 (포켓몬 스타일)
-- 📍 실시간 GPS 좌표 표시
-- 🎯 3개 거점의 위치 (격자무늬 맵)
-- 📏 각 거점까지의 거리 표시
-- 💚 50m 이내 거점 강조 표시 (색상 강조 + 스케일 확대)
+### claims
 
-**좌측**: 격자 무늬 포켓몬 스타일 맵
-- 녹색 격자 배경
-- 파란색 호수 영역
-- 컬러풀한 거점 마커
-- 플레이어 위치 표시 (👤)
+- `station_id` text primary key
+- `station_name` text not null
+- `lat` double precision
+- `lng` double precision
+- `owner_code` text references `players(code)`
+- `claimed_at` timestamptz default now()
 
-**우측**: 거점 정보 패널
-- 거점 이름, 관장, 보상
-- 실시간 거리 업데이트
-- 배지 획득 상태 표시 (✅)
+## 데이터 흐름
 
-### ⚔️ 배틀 화면 (정확한 GBA 스타일)
+### 입장
 
-```
-┌─────────────────────────────────┐
-│ VS 포켓몬 이름         L50      │
-│ HP [████████████░░░░] 85/100    │
-│                                  │
-│        [스프라이트 영역]          │
-│                                  │
-│                                  │
-│        [플레이어 영역]            │
-│ 플레이어              L50        │
-│ HP [██████████████░░░░] 92/100  │
-├─────────────────────────────────┤
-│ 상대의 공격! 15의 데미지!        │ ▼
-├─────────────────────────────────┤
-│  ⚡ 공격   │  🏃 도망           │
-│  🎒 백팩   │  💾 저장           │
-└─────────────────────────────────┘
-```
+1. 사용자가 고유번호 입력
+2. `players` 테이블에서 코드 확인
+3. 일치하면 해당 닉네임으로 세션 시작
 
-**배틀 시스템**:
-- **자동 시작**: 거점 50m 이내 진입 시 자동으로 배틀 시작
-- **HP 시스템**: 플레이어와 보스 각각 100 HP
-- **⚡ 공격 버튼**: 10~30의 데미지 (랜덤)
-- **🏃 도망 버튼**: 배틀 중단 및 맵으로 복귀
-- **텍스트 윈도우**: 배틀 로그 표시 (최근 2개 메시지)
-- **깜빡이는 화살표**: "계속" 인디케이터
-- **승리**: 보스 HP 0 → 배지 획득
-- **패배**: 플레이어 HP 0 → 다시 도전 가능
+### 점령
 
-### 🏅 배지 시스템
-- 🏅 배틀 승리 시 배지 자동 획득
-- 💾 로컬 스토리지에 저장 (영구 보존)
-- 📊 Google Sheets에 자동 백업 (설정 시)
-- ✅ 하단 "배지 수집 현황"에서 3개 배지 상태 확인
-- 📈 획득한 배지는 색상으로 표시, 미획득은 흐릿함
+1. 현재 위치 기준 가장 가까운 대여소 탐색
+2. 120m 안이면 점령 버튼 노출
+3. 점령 시 `claims` 테이블에 저장
+4. 다른 접속자는 Realtime 구독으로 변경 반영
 
-## 🔧 기술 스택
+### 랭킹
 
-- **프론트엔드**: React 18 (CDN)
-- **위치 추적**: Geolocation API
-- **거리 계산**: Haversine 공식
-- **데이터 저장**: 
-  - 로컬: localStorage
-  - 클라우드: Google Sheets API
-- **UI 폰트**: Press Start 2P (웹 폰트)
-- **그래픽**: HTML5 Canvas (도트 스타일)
+1. `claims`를 `owner_code` 기준으로 집계
+2. 많이 점령한 순으로 정렬
+3. 같은 데이터가 모든 접속자에게 보임
 
-## 📐 알고리즘 상세
+## 주의사항
 
-### Haversine 공식
-```javascript
-거리(m) = 2R × arcsin(√[sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlng/2)])
-```
-- R: 지구 반지름 (6,371km)
-- 오차: ±0.5% 이내
-- 용도: GPS 좌표 간 대원 거리 계산
+- `file://`에서는 Supabase와 외부 API 호출이 막힐 수 있습니다.
+- 공식 따릉이 데이터는 환경에 따라 간헐적으로 응답이 끊길 수 있어 캐시 fallback이 들어가 있습니다.
+- 현재 RLS 정책은 테스트용으로 넓게 열려 있으니, 서비스 오픈 전에는 코드별 제한 정책으로 강화하는 것이 좋습니다.
 
-### 근처 감지 로직
-1. 실시간 GPS 업데이트 (1초마다)
-2. 각 거점까지 거리 계산
-3. 최소 거리가 50m 이하인지 확인
-4. 조건 충족 시 자동 배틀 시작
+## 다음 개선 후보
 
-## 💾 데이터 구조
-
-### 로컬 스토리지
-```javascript
-{
-  badges: {
-    centerfield: true,
-    gangnam: false,
-    seollung: true
-  },
-  gsheets_api_key: "AIza...",
-  gsheets_id: "1a2b3c4d..."
-}
-```
-
-### Google Sheets 형식
-| 플레이어명 | 배지명 | 획득여부 | 획득시간 |
-|----------|--------|----------|---------|
-| player | 센터필드 배지 | TRUE | 2026-04-24T15:30:45 |
-
-## 🛡️ 보안 참고사항
-
-⚠️ **중요**: 클라이언트 직접 Google Sheets API 호출은 다음과 같은 한계가 있습니다:
-- **CORS 제한**: 특정 설정에서 차단될 수 있음
-- **API 키 노출**: 클라이언트 코드에 키가 노출됨
-- **속도 제한**: Google API 할당량 제한
-
-### 프로덕션 권장사항
-```
-클라이언트 앱 → 백엔드 프록시 → Google Sheets API
-```
-
-백엔드 프록시를 구현하면:
-- ✅ 보안 강화 (API 키 숨김)
-- ✅ CORS 문제 해결
-- ✅ 할당량 관리 개선
-- ✅ 요청 검증 가능
-
-## 🎨 커스터마이징
-
-### 거점 추가
-`GameApp` 컴포넌트의 `gyms` 배열 수정:
-```javascript
-{
-  id: 'new_gym',
-  name: '새로운 거점',
-  coords: { lat: 37.xxxx, lng: 127.xxxx },
-  boss: '관장명',
-  reward: '배지명',
-  color: '#RRGGBB'
-}
-```
-
-### UI 테마 변경
-`styles` 객체의 색상값 수정:
-- `#00FF00`: 초록색 (기본)
-- `#FF6B6B`: 빨간색 (배틀)
-- `#FFD700`: 황금색 (배지)
-
-### 배틀 난이도 조정
-```javascript
-// 플레이어 공격력
-const damage = Math.floor(Math.random() * 20) + 10;
-
-// 보스 공격력
-const bossDamage = Math.floor(Math.random() * 15) + 5;
-```
-
-## 🐛 트러블슈팅
-
-### GPS가 작동하지 않음
-- ✅ HTTPS 연결 확인 (localhost 제외)
-- ✅ 브라우저 위치 권한 허용 확인
-- ✅ GPS 신호 강도 확인
-
-### Google Sheets API 오류
-```
-"API 요청 실패" 메시지가 나타나면:
-1. API 키가 정확하게 입력되었는지 확인
-2. Google Cloud Console에서 Sheets API가 활성화되었는지 확인
-3. 스프레드시트 ID가 정확한지 확인
-4. 브라우저 개발자 도구 콘솔에서 CORS 오류 확인
-```
-
-### 배지가 저장되지 않음
-- 브라우저 localStorage가 활성화되었는지 확인
-- 개인 정보 보호 모드(시크릿 창)에서는 localStorage 불가
-
-## 📱 모바일 최적화
-
-앱은 모바일 환경에서 최적화되어 있습니다:
-- ✅ 반응형 레이아웃
-- ✅ 터치 친화적 버튼 크기
-- ✅ 배터리 효율적 GPS 업데이트
-- ⚠️ 3G/4G LTE 환경에서 테스트 권장
-
-## 🎓 학습 자료
-
-- [Geolocation API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation)
-- [Haversine 공식](https://en.wikipedia.org/wiki/Haversine_formula)
-- [Google Sheets API](https://developers.google.com/sheets/api)
-- [React 공식 문서](https://react.dev)
-
-## 📞 기술 지원
-
-문제 발생 시:
-1. 브라우저 개발자 도구 (F12) > 콘솔 확인
-2. 네트워크 탭에서 API 요청 상태 확인
-3. 로컬 스토리지 데이터 확인
-
-## 📝 라이선스
-
-이 프로젝트는 개인/교육 목적으로 자유롭게 사용할 수 있습니다.
-
----
-
-**즐거운 게이밍! 🚀** ✨
+- 점령 정책을 Edge Function으로 이동
+- 주간 랭킹 리셋
+- 프로필 아바타 커스터마이징
+- 대여소 점령 이력 페이지
+- 주간 왕관 효과와 보상 시스템
