@@ -1013,7 +1013,7 @@
     <div class="gate-overlay" id="gateOverlay">
       <section class="floating-card gate-card">
         <div class="gate-title">라이더 입장</div>
-        <div class="gate-copy">관리자가 미리 발급한 고유번호를 입력하면 지정된 닉네임으로 바로 입장합니다.</div>
+        <div class="gate-copy">관리자가 미리 발급한 고유번호를 입력하면 지정된 이름으로 바로 입장합니다.</div>
         <input class="code-input" id="accessCodeInput" type="text" placeholder="고유번호 입력">
         <button class="gate-submit-button" id="accessButton" type="button">입장하기</button>
         <div class="gate-message" id="gateMessage">발급받은 고유번호가 있는 라이더만 이용할 수 있어요.</div>
@@ -1051,7 +1051,6 @@
                 <div class="profile-menu-record" id="myRecordLine">내기록 : 0곳 점령</div>
               </div>
             <button class="profile-menu-item primary" id="claimedStationsButton" type="button">내 점령 대여소</button>
-            <button class="profile-menu-item" id="changeNicknameButton" type="button">닉네임 변경하기</button>
           </section>
           <section class="floating-card claim-card is-hidden" id="claimListCard">
             <div class="claim-card-title" id="claimListTitle">내 점령 대여소 0곳</div>
@@ -1101,10 +1100,17 @@
     const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG__?.anonKey || '';
     const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
     const DEFAULT_PRESET_MEMBERS = [
-      { nickname: '테스트 라이더', code: '1111' },
-      { nickname: '잠실스프린터', code: '2222' },
-      { nickname: '강남페달러', code: '3333' },
-      { nickname: '송파부스터', code: '4444' },
+      { nickname: '김세미 (👑)', code: '1001' },
+      { nickname: '김하영', code: '1002' },
+      { nickname: '노수연', code: '1003' },
+      { nickname: '이승연', code: '1004' },
+      { nickname: '김성은', code: '1005' },
+      { nickname: '이기쁨', code: '1006' },
+      { nickname: '이수진', code: '1007' },
+      { nickname: '장은서', code: '1008' },
+      { nickname: '임다혜', code: '1009' },
+      { nickname: '김송이', code: '1010' },
+      { nickname: '황지예', code: '1011' },
     ];
 
     const AVATAR_IMAGE =
@@ -1184,7 +1190,6 @@
     const profileMenuButton = document.getElementById('profileMenuButton');
     const profileMenu = document.getElementById('profileMenu');
     const claimedStationsButton = document.getElementById('claimedStationsButton');
-    const changeNicknameButton = document.getElementById('changeNicknameButton');
     const claimListCard = document.getElementById('claimListCard');
     const claimListTitle = document.getElementById('claimListTitle');
     const claimList = document.getElementById('claimList');
@@ -1598,58 +1603,6 @@
       profileCodeValue.textContent = `현재 코드 : ${currentPlayer.code}`;
       myRankValue.textContent = myRank > 0 ? `${myRank}` : '-';
       myRecordLine.textContent = `내기록 : ${record.uniqueStations.length}곳 점령 · ${badgeLabel}`;
-    }
-
-    async function promptNicknameChange() {
-      if (!currentPlayer) {
-        statusMessage.textContent = '먼저 고유번호로 입장한 뒤 닉네임을 바꿀 수 있어요.';
-        return;
-      }
-
-      const record = getPlayerRecord(currentPlayer.code);
-      const previousNickname = record.nickname;
-      const nextNickname = window.prompt('변경할 닉네임을 입력해주세요.', record.nickname)?.trim();
-
-      if (!nextNickname) {
-        return;
-      }
-
-      record.nickname = nextNickname;
-      const currentMember = memberDirectory.find((member) => member.code === currentPlayer.code);
-      if (currentMember) {
-        currentMember.nickname = nextNickname;
-      }
-
-      renderLeaderboard();
-      updatePlayerHud();
-      profileMenu.classList.add('is-hidden');
-      statusMessage.textContent = `닉네임이 ${nextNickname}(으)로 변경됐어요.`;
-
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient
-          .from('players')
-          .update({ nickname: nextNickname })
-          .eq('code', currentPlayer.code)
-          .select('code, nickname')
-          .maybeSingle();
-
-        if (error || !data) {
-          record.nickname = previousNickname;
-          if (currentMember) {
-            currentMember.nickname = previousNickname;
-          }
-          renderLeaderboard();
-          updatePlayerHud();
-          console.error(error);
-          statusMessage.textContent = '닉네임을 Supabase에 저장하지 못했어요. 잠시 후 다시 시도해주세요.';
-          return;
-        }
-
-        await loadRemoteGameState();
-      } else {
-        record.nickname = nextNickname;
-        savePlayerStats();
-      }
     }
 
     function closeFloatingMenus(options = {}) {
@@ -2182,8 +2135,6 @@
       closeFloatingMenus({ keepClaimList: willOpen });
       claimListCard.classList.toggle('is-hidden', !willOpen);
     });
-
-    changeNicknameButton.addEventListener('click', promptNicknameChange);
 
     document.addEventListener('click', (event) => {
       const clickedInsideFloatingUi =
